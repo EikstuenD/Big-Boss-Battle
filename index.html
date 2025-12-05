@@ -3,332 +3,503 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Matte Boss Battle</title>
+    <title>Math Boss Battle - Configurable</title>
     <style>
+        /* --- General Styles --- */
         body {
             margin: 0;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #1a1a1a;
-            color: white;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: #0d0d0d; /* Very dark background */
+            color: #e0e0e0;
+            height: 100vh;
             overflow: hidden;
             display: flex;
-            flex-direction: column;
+            justify-content: center;
             align-items: center;
-            height: 100vh;
         }
 
-        /* --- Game Area --- */
+        h1, h2, h3 { text-transform: uppercase; letter-spacing: 2px; margin: 0 0 10px 0; }
+        
+        /* --- Screens --- */
+        .screen {
+            width: 100%;
+            height: 100%;
+            display: none; /* Hidden by default */
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .active { display: flex; }
+
+        /* --- MENU STYLES --- */
+        #menu-screen {
+            background: #1a1a1a;
+            padding: 20px;
+            overflow-y: auto;
+            align-items: center;
+            justify-content: flex-start;
+            padding-top: 50px;
+        }
+
+        .config-card {
+            background: #2a2a2a;
+            padding: 25px;
+            border-radius: 10px;
+            border: 1px solid #444;
+            width: 90%;
+            max-width: 600px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; color: #aaa; }
+        input, select {
+            width: 100%;
+            padding: 10px;
+            background: #111;
+            border: 1px solid #555;
+            color: white;
+            border-radius: 5px;
+            font-size: 1rem;
+        }
+        
+        /* Button Config Generator */
+        #button-config-area {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 10px;
+            padding: 10px;
+            background: #222;
+            border-radius: 5px;
+        }
+        
+        .btn-setup-row {
+            grid-column: span 2;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            background: #333;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        .btn-setup-row input[type="number"] { width: 80px; }
+        .btn-setup-row input[type="color"] { width: 50px; height: 40px; padding: 0; border: none; cursor: pointer; }
+
+        .start-btn {
+            background: linear-gradient(45deg, #2ecc71, #27ae60);
+            color: white;
+            font-size: 1.5rem;
+            font-weight: bold;
+            border: none;
+            padding: 15px;
+            width: 100%;
+            margin-top: 20px;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: transform 0.1s;
+        }
+        .start-btn:hover { transform: scale(1.02); box-shadow: 0 0 15px #2ecc71; }
+
+        /* --- GAME STYLES --- */
         #game-area {
+            width: 100%;
+            max-width: 1000px;
+            text-align: center;
+            position: relative;
             flex-grow: 1;
             display: flex;
             flex-direction: column;
-            align-items: center;
             justify-content: center;
-            width: 100%;
-            position: relative;
+            align-items: center;
         }
 
-        h1 { font-size: 3rem; text-shadow: 2px 2px 4px #000; margin-bottom: 10px; }
-
-        /* Monster Styling */
-        .monster-container {
-            position: relative;
-            transition: filter 0.3s;
-        }
-        
-        #monster-img {
-            height: 400px;
-            width: auto;
-            filter: drop-shadow(0 0 20px rgba(0,0,0,0.5));
-            transition: transform 0.1s;
-        }
-
-        /* Animations */
-        .shake { animation: shake 0.5s; }
-        .dead { filter: grayscale(100%) blur(5px); transform: scale(0.9); }
-        .hit-overlay {
-            position: absolute;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(255, 0, 0, 0.5);
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity 0.1s;
-        }
-
-        @keyframes shake {
-            0% { transform: translate(1px, 1px) rotate(0deg); }
-            10% { transform: translate(-1px, -2px) rotate(-1deg); }
-            20% { transform: translate(-3px, 0px) rotate(1deg); }
-            30% { transform: translate(3px, 2px) rotate(0deg); }
-            40% { transform: translate(1px, -1px) rotate(1deg); }
-            50% { transform: translate(-1px, 2px) rotate(-1deg); }
-            60% { transform: translate(-3px, 1px) rotate(0deg); }
-            70% { transform: translate(3px, 1px) rotate(-1deg); }
-            80% { transform: translate(-1px, -1px) rotate(1deg); }
-            90% { transform: translate(1px, 2px) rotate(0deg); }
-            100% { transform: translate(1px, -2px) rotate(-1deg); }
-        }
-
-        /* Floating Damage Text */
-        .damage-text {
-            position: absolute;
-            color: #ff4d4d;
-            font-weight: bold;
+        #boss-name-display {
             font-size: 3rem;
-            animation: floatUp 1s forwards;
-            pointer-events: none;
-            text-shadow: 2px 2px 0 #000;
-        }
-        
-        .crit-text { color: #ffeb3b; font-size: 4rem; }
-
-        @keyframes floatUp {
-            to { transform: translateY(-100px); opacity: 0; }
+            color: #ff3333;
+            text-shadow: 0 0 10px #ff0000;
+            margin-bottom: 10px;
         }
 
         /* Health Bar */
-        #hp-container {
-            width: 60%;
-            height: 40px;
-            background-color: #444;
-            border-radius: 20px;
-            border: 4px solid #000;
-            margin-bottom: 20px;
+        .hp-bar-frame {
+            width: 80%;
+            height: 50px;
+            background: #333;
+            border: 4px solid #111;
+            border-radius: 25px;
             overflow: hidden;
             position: relative;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+            margin-bottom: 30px;
         }
 
-        #hp-fill {
+        .hp-fill {
             height: 100%;
             width: 100%;
-            background: linear-gradient(90deg, #ff8c00, #ff0000);
-            transition: width 0.3s ease-out;
+            background: linear-gradient(90deg, #e74c3c, #c0392b);
+            transition: width 0.4s cubic-bezier(0.25, 1, 0.5, 1);
         }
 
-        #hp-text {
+        .hp-text {
             position: absolute;
-            width: 100%;
-            text-align: center;
-            line-height: 40px;
+            top: 0; left: 0; width: 100%; height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             font-weight: bold;
-            text-shadow: 1px 1px 2px black;
+            font-size: 1.5rem;
+            text-shadow: 2px 2px 4px black;
             z-index: 2;
         }
 
-        /* Controls */
-        #controls {
-            display: flex;
-            gap: 15px;
-            padding: 20px;
-            background: rgba(0,0,0,0.8);
+        /* Monster Image */
+        .monster-wrapper {
+            position: relative;
+            height: 400px;
             width: 100%;
+            display: flex;
             justify-content: center;
+            align-items: center;
         }
 
-        .atk-btn {
-            padding: 15px 30px;
-            font-size: 1.5rem;
-            background: #2196F3;
+        #monster-img {
+            max-height: 100%;
+            max-width: 100%;
+            filter: drop-shadow(0 0 20px rgba(0,0,0,0.8));
+            transition: transform 0.1s;
+        }
+
+        /* Effects */
+        .shake { animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both; }
+        .flash-red { animation: flashRed 0.2s; }
+        .dead { filter: grayscale(100%) brightness(0.5) blur(2px); transform: scale(0.9); transition: 1s; }
+
+        @keyframes shake {
+            10%, 90% { transform: translate3d(-2px, 0, 0); }
+            20%, 80% { transform: translate3d(4px, 0, 0); }
+            30%, 50%, 70% { transform: translate3d(-6px, 0, 0); }
+            40%, 60% { transform: translate3d(6px, 0, 0); }
+        }
+        @keyframes flashRed {
+            0% { filter: sepia(100%) hue-rotate(-50deg) saturate(600%) contrast(2); }
+            100% { filter: none; }
+        }
+
+        /* Floating Numbers */
+        .damage-number {
+            position: absolute;
+            font-size: 4rem;
+            font-weight: 900;
+            color: #ffcc00;
+            text-shadow: 3px 3px 0 #000;
+            pointer-events: none;
+            animation: floatUp 1s ease-out forwards;
+        }
+
+        @keyframes floatUp {
+            0% { transform: translateY(0) scale(1); opacity: 1; }
+            100% { transform: translateY(-150px) scale(1.5); opacity: 0; }
+        }
+
+        /* Button Grid */
+        #game-controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            justify-content: center;
+            padding: 20px;
+            width: 100%;
+            background: rgba(0,0,0,0.6);
+            backdrop-filter: blur(5px);
+            position: fixed;
+            bottom: 0;
+            border-top: 2px solid #333;
+        }
+
+        .action-btn {
+            padding: 20px 40px;
+            font-size: 2rem;
+            font-weight: bold;
             color: white;
             border: none;
-            border-radius: 8px;
+            border-radius: 12px;
             cursor: pointer;
-            box-shadow: 0 4px #0d47a1;
+            box-shadow: 0 6px rgba(0,0,0,0.4);
             transition: all 0.1s;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+            min-width: 120px;
         }
 
-        .atk-btn:active {
+        .action-btn:active {
             transform: translateY(4px);
-            box-shadow: 0 0 #0d47a1;
+            box-shadow: 0 0 rgba(0,0,0,0.4);
         }
 
-        /* Admin Menu */
-        #admin-panel {
+        /* Reset Button */
+        #reset-btn {
             position: absolute;
-            top: 10px;
-            right: 10px;
-            background: rgba(255, 255, 255, 0.9);
-            color: black;
-            padding: 15px;
-            border-radius: 8px;
-            display: none; /* Hidden by default */
-            z-index: 100;
-            width: 300px;
+            top: 20px; left: 20px;
+            background: #444; color: white;
+            border: none; padding: 10px 20px;
+            cursor: pointer; border-radius: 5px;
         }
-
-        .show-admin { display: block !important; }
-        
-        input, select { width: 100%; padding: 5px; margin-bottom: 10px; }
-        label { font-weight: bold; font-size: 0.9rem; }
-
-        #toggle-admin {
-            position: absolute;
-            top: 10px; 
-            right: 10px;
-            opacity: 0.3;
-            cursor: pointer;
-        }
-        #toggle-admin:hover { opacity: 1; }
-
     </style>
 </head>
 <body>
 
-    <div id="toggle-admin">⚙️</div>
+    <div id="menu-screen" class="screen active">
+        <div class="config-card">
+            <h2>⚙️ Boss Setup</h2>
+            <hr style="border-color: #444; margin-bottom: 20px;">
 
-    <div id="admin-panel">
-        <h3>Admin Innstillinger</h3>
-        
-        <label>Boss Navn:</label>
-        <input type="text" id="input-name" value="Algebra-Trollet">
-        
-        <label>Boss Bilde URL:</label>
-        <input type="text" id="input-img" value="https://cdn-icons-png.flaticon.com/512/3069/3069172.png">
-        
-        <label>Maks HP:</label>
-        <input type="number" id="input-hp" value="500">
-        
-        <label>Knapper (verdier separert med komma):</label>
-        <input type="text" id="input-buttons" value="10, 25, 50, 100">
-        
-        <button onclick="setupGame()" style="width:100%; padding: 10px; background: green; color: white; border:none;">Oppdater Spill</button>
+            <div class="form-group">
+                <label>Velg Monster:</label>
+                <select id="monster-select" onchange="previewMonsterName()">
+                    </select>
+            </div>
+
+            <div class="form-group">
+                <label>Navn på Boss:</label>
+                <input type="text" id="boss-name-input">
+            </div>
+
+            <div class="form-group">
+                <label>Maks HP:</label>
+                <input type="number" id="hp-input" value="1000" step="50">
+            </div>
+
+            <div class="form-group">
+                <label>Antall knapper:</label>
+                <input type="number" id="btn-count-input" value="3" min="1" max="6" onchange="generateButtonConfig()">
+            </div>
+
+            <label>Knappe-innstillinger (Skade | Farge):</label>
+            <div id="button-config-area">
+                </div>
+
+            <button class="start-btn" onclick="startGame()">⚔️ START KAMP ⚔️</button>
+        </div>
     </div>
 
-    <div id="game-area">
-        <h1 id="boss-name">Algebra-Trollet</h1>
-        
-        <div id="hp-container">
-            <div id="hp-text">500 / 500</div>
-            <div id="hp-fill"></div>
+    <div id="game-screen" class="screen">
+        <button id="reset-btn" onclick="goToMenu()">Esc (Meny)</button>
+
+        <div id="game-area">
+            <h1 id="boss-name-display">Boss Navn</h1>
+
+            <div class="hp-bar-frame">
+                <div class="hp-text" id="hp-text">1000 / 1000</div>
+                <div class="hp-fill" id="hp-fill"></div>
+            </div>
+
+            <div class="monster-wrapper">
+                <img id="monster-img" src="" alt="Monster">
+                </div>
         </div>
 
-        <div class="monster-container">
-            <img id="monster-img" src="https://cdn-icons-png.flaticon.com/512/3069/3069172.png" alt="Monster">
-            <div id="hit-overlay" class="hit-overlay"></div>
-        </div>
+        <div id="game-controls">
+            </div>
     </div>
-
-    <div id="controls">
-        </div>
 
     <script>
-        // State variables
-        let currentHp = 500;
-        let maxHp = 500;
-        let isDead = false;
+        // --- DATA ---
+        // Liste over monstre med bilder. 
+        // Bruker åpne, stabile illustrasjoner.
+        const monsters = [
+            { name: "Inferno Drage", url: "https://image.lexica.art/full_jpg/09409b30-316a-4c22-9a00-3323087227d8", defaultHp: 2000 },
+            { name: "Skygge Enhjørning", url: "https://image.lexica.art/full_jpg/1423403e-8c3b-489e-b187-5750868f0376", defaultHp: 1500 },
+            { name: "Grotte Trollet", url: "https://image.lexica.art/full_jpg/2c9c7c25-1e35-4309-87c1-2e6b72045b85", defaultHp: 1000 },
+            { name: "Cyclops Titan", url: "https://image.lexica.art/full_jpg/5a22540b-7414-41d3-bb74-325292415d86", defaultHp: 1200 },
+            { name: "Hydra", url: "https://image.lexica.art/full_jpg/cf598a00-4b2a-43d9-9524-7389823d069a", defaultHp: 3000 },
+            { name: "Kraken", url: "https://image.lexica.art/full_jpg/b94d7564-9d5a-4933-b6d5-116d97c75685", defaultHp: 2500 }
+        ];
 
-        // Admin Toggle
-        document.getElementById('toggle-admin').addEventListener('click', () => {
-            const panel = document.getElementById('admin-panel');
-            panel.classList.toggle('show-admin');
-        });
+        // Default button colors
+        const defaultColors = ["#e74c3c", "#3498db", "#f1c40f", "#9b59b6", "#2ecc71", "#e67e22"];
 
-        // Initialize Game
-        function setupGame() {
-            // Get values from Admin
-            const name = document.getElementById('input-name').value;
-            const imgUrl = document.getElementById('input-img').value;
-            maxHp = parseInt(document.getElementById('input-hp').value);
-            const buttonString = document.getElementById('input-buttons').value;
+        // --- STATE VARIABLES ---
+        let currentHp = 0;
+        let maxHp = 0;
+        let gameActive = false;
 
-            // Reset State
-            currentHp = maxHp;
-            isDead = false;
+        // --- INIT ---
+        window.onload = function() {
+            populateMonsterSelect();
+            generateButtonConfig(); // Generate default buttons
+        };
 
-            // Update UI
-            document.getElementById('boss-name').innerText = name;
-            document.getElementById('monster-img').src = imgUrl;
-            document.getElementById('monster-img').classList.remove('dead');
-            updateHealthUI();
-
-            // Generate Buttons
-            const controlsDiv = document.getElementById('controls');
-            controlsDiv.innerHTML = ''; // Clear existing
-            
-            const values = buttonString.split(',').map(v => v.trim());
-            values.forEach(val => {
-                const btn = document.createElement('button');
-                btn.className = 'atk-btn';
-                btn.innerText = `-${val} HP`;
-                btn.onclick = () => attackBoss(parseInt(val));
-                controlsDiv.appendChild(btn);
+        // Populate the dropdown menu
+        function populateMonsterSelect() {
+            const select = document.getElementById('monster-select');
+            monsters.forEach((m, index) => {
+                const opt = document.createElement('option');
+                opt.value = index;
+                opt.innerText = m.name;
+                select.appendChild(opt);
             });
-            
-            // Hide admin panel
-            document.getElementById('admin-panel').classList.remove('show-admin');
+            previewMonsterName();
         }
 
-        // Attack Function
-        function attackBoss(damage) {
-            if (isDead) return;
+        // Set input name when monster changes
+        function previewMonsterName() {
+            const index = document.getElementById('monster-select').value;
+            document.getElementById('boss-name-input').value = monsters[index].name;
+            document.getElementById('hp-input').value = monsters[index].defaultHp;
+        }
 
-            // 10% Chance for Critical Hit (2x damage)
-            let isCrit = Math.random() < 0.10; 
-            let actualDamage = isCrit ? damage * 2 : damage;
+        // Generate the inputs for buttons (Value & Color)
+        function generateButtonConfig() {
+            const count = parseInt(document.getElementById('btn-count-input').value);
+            const container = document.getElementById('button-config-area');
+            container.innerHTML = ""; // Clear
 
-            currentHp -= actualDamage;
-            if (currentHp < 0) currentHp = 0;
+            for (let i = 0; i < count; i++) {
+                const row = document.createElement('div');
+                row.className = 'btn-setup-row';
 
-            // Update HP Bar
-            updateHealthUI();
-            
-            // Visual Effects
-            triggerDamageEffect(actualDamage, isCrit);
+                // Input for Damage Value
+                const valInput = document.createElement('input');
+                valInput.type = "number";
+                valInput.placeholder = "HP";
+                valInput.value = (i + 1) * 10; // Default values 10, 20, 30...
+                valInput.id = `btn-val-${i}`;
 
-            // Check Death
-            if (currentHp <= 0) {
-                isDead = true;
-                document.getElementById('monster-img').classList.add('dead');
-                document.getElementById('boss-name').innerText += " (BESEIRET!)";
+                // Input for Color
+                const colInput = document.createElement('input');
+                colInput.type = "color";
+                colInput.value = defaultColors[i % defaultColors.length];
+                colInput.id = `btn-col-${i}`;
+
+                const label = document.createElement('span');
+                label.innerText = `Knapp ${i+1}`;
+
+                row.appendChild(label);
+                row.appendChild(valInput);
+                row.appendChild(colInput);
+                container.appendChild(row);
             }
         }
 
-        function updateHealthUI() {
-            const percentage = (currentHp / maxHp) * 100;
-            document.getElementById('hp-fill').style.width = percentage + '%';
-            document.getElementById('hp-text').innerText = `${currentHp} / ${maxHp}`;
+        // --- GAME LOGIC ---
+
+        function startGame() {
+            // Get Config Data
+            const monsterIndex = document.getElementById('monster-select').value;
+            const customName = document.getElementById('boss-name-input').value;
+            maxHp = parseInt(document.getElementById('hp-input').value);
+            const btnCount = parseInt(document.getElementById('btn-count-input').value);
+
+            // Set State
+            currentHp = maxHp;
+            gameActive = true;
+
+            // Setup UI
+            document.getElementById('boss-name-display').innerText = customName;
+            const img = document.getElementById('monster-img');
+            img.src = monsters[monsterIndex].url;
+            img.classList.remove('dead'); // Reset if previously dead
             
-            // Change color based on health
+            updateHealthBar();
+
+            // Generate Action Buttons
+            const controlArea = document.getElementById('game-controls');
+            controlArea.innerHTML = "";
+            
+            for(let i=0; i<btnCount; i++) {
+                const val = document.getElementById(`btn-val-${i}`).value;
+                const col = document.getElementById(`btn-col-${i}`).value;
+
+                const btn = document.createElement('button');
+                btn.className = 'action-btn';
+                btn.innerText = `-${val}`;
+                btn.style.backgroundColor = col;
+                btn.onclick = () => takeDamage(parseInt(val));
+                controlArea.appendChild(btn);
+            }
+
+            // Switch Screens
+            document.getElementById('menu-screen').classList.remove('active');
+            document.getElementById('game-screen').classList.add('active');
+        }
+
+        function takeDamage(amount) {
+            if(!gameActive) return;
+
+            // Math Logic
+            currentHp -= amount;
+            if(currentHp < 0) currentHp = 0;
+
+            // Visual Logic
+            updateHealthBar();
+            triggerDamageVisuals(amount);
+
+            // Win Condition
+            if(currentHp <= 0) {
+                gameActive = false;
+                defeatMonster();
+            }
+        }
+
+        function updateHealthBar() {
+            const pct = (currentHp / maxHp) * 100;
             const fill = document.getElementById('hp-fill');
-            if(percentage < 25) fill.style.background = '#ff0000'; // Pure Red
-            else if(percentage < 50) fill.style.background = '#ffff00'; // Yellow
-            else fill.style.background = 'linear-gradient(90deg, #ff8c00, #ff0000)';
+            const text = document.getElementById('hp-text');
+
+            fill.style.width = pct + "%";
+            text.innerText = `${currentHp} / ${maxHp}`;
+
+            // Color changes
+            if(pct > 50) fill.style.background = "linear-gradient(90deg, #e74c3c, #c0392b)";
+            else if(pct > 25) fill.style.background = "#f1c40f";
+            else fill.style.background = "#e74c3c";
         }
 
-        function triggerDamageEffect(amount, isCrit) {
-            const monster = document.getElementById('monster-img');
-            const overlay = document.getElementById('hit-overlay');
+        function triggerDamageVisuals(amount) {
+            const img = document.getElementById('monster-img');
+            const wrapper = document.querySelector('.monster-wrapper');
+
+            // 1. Shake
+            img.classList.remove('shake');
+            void img.offsetWidth; // Trigger reflow
+            img.classList.add('shake');
+
+            // 2. Flash Red
+            img.classList.remove('flash-red');
+            void img.offsetWidth;
+            img.classList.add('flash-red');
+
+            // 3. Floating Text
+            const floatText = document.createElement('div');
+            floatText.className = 'damage-number';
+            floatText.innerText = `-${amount}`;
             
-            // Shake
-            monster.classList.remove('shake');
-            void monster.offsetWidth; // trigger reflow
-            monster.classList.add('shake');
-
-            // Flash Red
-            overlay.style.opacity = 0.8;
-            setTimeout(() => { overlay.style.opacity = 0; }, 100);
-
-            // Floating Text
-            const text = document.createElement('div');
-            text.innerText = isCrit ? `CRITICAL! -${amount}` : `-${amount}`;
-            text.className = isCrit ? 'damage-text crit-text' : 'damage-text';
+            // Random offset for text to avoid overlapping perfectly
+            const rndX = Math.floor(Math.random() * 60) - 30;
+            floatText.style.transform = `translateX(${rndX}px)`;
             
-            // Random position near monster
-            const randomX = Math.floor(Math.random() * 100) - 50;
-            text.style.transform = `translateX(${randomX}px)`;
-            
-            // Center the text in the container
-            text.style.left = "50%";
-            text.style.top = "20%";
+            wrapper.appendChild(floatText);
 
-            document.querySelector('.monster-container').appendChild(text);
-
-            // Cleanup text element
-            setTimeout(() => { text.remove(); }, 1000);
+            // Remove text after animation
+            setTimeout(() => { floatText.remove(); }, 1000);
         }
 
-        // Run setup once on load
-        setupGame();
+        function defeatMonster() {
+            const img = document.getElementById('monster-img');
+            const name = document.getElementById('boss-name-display');
+            
+            img.classList.add('dead');
+            name.innerText += " ER DØD!";
+            name.style.color = "#555";
+        }
+
+        function goToMenu() {
+            if(confirm("Gå tilbake til menyen? Nåværende spill nullstilles.")) {
+                document.getElementById('game-screen').classList.remove('active');
+                document.getElementById('menu-screen').classList.add('active');
+            }
+        }
     </script>
 </body>
 </html>
