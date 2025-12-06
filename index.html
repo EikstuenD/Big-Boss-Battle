@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Big Boss Battle</title>
+    <title>Math Boss Battle - Fixed</title>
     <style>
         /* --- General Styles --- */
         :root {
@@ -37,6 +37,7 @@
         #menu-screen {
             background: var(--bg-color);
             padding: 20px; overflow-y: auto;
+            z-index: 10;
         }
         .config-card {
             background: var(--panel-bg);
@@ -49,7 +50,7 @@
         input, select {
             width: 100%; padding: 12px; background: #252525;
             border: 2px solid #444; color: white; border-radius: 8px; font-size: 1rem;
-            box-sizing: border-box; /* Important for padding calculation */
+            box-sizing: border-box; 
         }
         input:focus, select:focus { border-color: var(--primary-color); outline: none; }
 
@@ -63,13 +64,16 @@
         }
         .btn-setup-row input[type="number"] { flex-grow: 1; }
         .btn-setup-row input[type="color"] { width: 50px; height: 45px; padding: 0; border: none; cursor: pointer; }
+        
         .start-btn {
             background: linear-gradient(45deg, var(--primary-color), #27ae60);
             color: white; font-size: 1.3rem; font-weight: bold; border: none;
             padding: 15px; width: 100%; margin-top: 25px; cursor: pointer;
             border-radius: 8px; transition: transform 0.2s;
+            box-shadow: 0 4px 15px rgba(46, 204, 113, 0.3);
         }
-        .start-btn:hover { transform: scale(1.03); }
+        .start-btn:hover { transform: scale(1.03); box-shadow: 0 6px 20px rgba(46, 204, 113, 0.5); }
+        .start-btn:active { transform: scale(0.98); }
 
         /* --- GAME AREA STYLES --- */
         #game-area {
@@ -102,41 +106,35 @@
         /* --- ANIMATED MONSTER STYLES --- */
         .monster-stage {
             position: relative;
-            height: 500px; /* Fixed height for the stage */
+            height: 500px; 
             width: 100%;
             display: flex;
             justify-content: center;
             align-items: center;
-            /* Add a subtle shadow on the "floor" */
             background: radial-gradient(ellipse at bottom, rgba(0,0,0,0.8) 0%, transparent 70%);
         }
 
         #monster-img {
-            max-height: 90%; /* Keep it within the stage */
+            max-height: 90%; 
             width: auto;
             filter: drop-shadow(0 10px 20px rgba(0,0,0,0.5));
-            /* The Idle Animation - smooth floating */
             animation: idleFloat 4s ease-in-out infinite;
-            transition: filter 0.2s; /* Smooth transition for death filter */
+            transition: filter 0.2s; 
         }
 
         /* Idle Animation Keyframes */
         @keyframes idleFloat {
             0%, 100% { transform: translateY(0px) scale(1); }
-            50% { transform: translateY(-20px) scale(1.02); } /* Float up and breath slightly */
+            50% { transform: translateY(-20px) scale(1.02); } 
         }
 
         /* --- REACTION ANIMATIONS (When Hit) --- */
-        
-        /* This class is added via JS when hit, overrides idle animation */
         .is-hit {
             animation: monsterHitReact 0.5s cubic-bezier(.36,.07,.19,.97) both !important;
         }
 
         @keyframes monsterHitReact {
             0% { transform: scale(1) translate(0, 0); filter: sepia(0) hue-rotate(0) saturate(1); }
-            
-            /* Flash Red and recoil / shrink */
             10%, 30% { 
                 transform: scale(0.9) translate(-5px, 5px); 
                 filter: sepia(100%) hue-rotate(-50deg) saturate(600%) contrast(1.5); 
@@ -147,18 +145,15 @@
             }
             50% { transform: scale(0.95) translate(-2px, 2px); }
             60% { transform: scale(0.95) translate(2px, -2px); }
-
-            /* Return to normal */
             100% { transform: scale(1) translate(0, 0); filter: sepia(0) hue-rotate(0) saturate(1); }
         }
 
         .dead {
-            filter: grayscale(100%) brightness(0.4) sepia(30%) !important; /* Dark and dead looking */
-            animation: none !important; /* Stop moving */
-            transform: translateY(30px) scale(0.9); /* Slump down */
+            filter: grayscale(100%) brightness(0.4) sepia(30%) !important; 
+            animation: none !important; 
+            transform: translateY(30px) scale(0.9); 
             transition: 1s all ease-out;
         }
-
 
         /* Floating Damage Numbers */
         .damage-number {
@@ -190,7 +185,7 @@
         .action-btn:active { top: 6px; box-shadow: 0 2px rgba(0,0,0,0.3); }
         #reset-btn {
             position: absolute; top: 20px; left: 20px; background: #444;
-            color: #ccc; border: none; padding: 8px 15px; cursor: pointer; border-radius: 5px;
+            color: #ccc; border: none; padding: 8px 15px; cursor: pointer; border-radius: 5px; z-index: 100;
         }
         #reset-btn:hover { color: white; background: #555; }
     </style>
@@ -245,7 +240,7 @@
 
             <div class="monster-stage">
                 <img id="monster-img" src="" alt="Monster Animated">
-                </div>
+            </div>
         </div>
 
         <div id="game-controls">
@@ -253,8 +248,7 @@
     </div>
 
     <script>
-        // --- DATA: Animated Monsters ---
-        // Vi bruker lenker til animerte GIF-er med gjennomsiktig bakgrunn.
+        // --- DATA ---
         const monsters = [
             { name: "Den Røde Dragen", url: "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExajZ4bnZ5a3Z6a3Z4bnZ5a3Z6a3Z4bnZ5a3Z6a3Z4bnZ5a3Z6aSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9cw/14bOa08X7G5T7G/giphy.gif", defaultHp: 2500 },
             { name: "Mørkets Trollmann", url: "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExa3Z4bnZ5a3Z6a3Z4bnZ5a3Z6a3Z4bnZ5a3Z6a3Z4bnZ5a3Z6aSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9cw/l0HlFW9YjX3j9gX1S/giphy.gif", defaultHp: 1500 },
@@ -274,7 +268,6 @@
             generateButtonConfig();
         };
 
-        // --- MENU FUNCTIONS ---
         function populateMonsterSelect() {
             const select = document.getElementById('monster-select');
             monsters.forEach((m, index) => {
@@ -291,40 +284,57 @@
             document.getElementById('hp-input').value = monsters[index].defaultHp;
         }
 
+        // --- FIXED FUNCTION ---
         function generateButtonConfig() {
             let count = parseInt(document.getElementById('btn-count-input').value);
-            if(count < 1) count = 1; if(count > 6) count = 6;
+            if(isNaN(count) || count < 1) count = 1; 
+            if(count > 6) count = 6;
+            
+            // Update input back to valid number
             document.getElementById('btn-count-input').value = count;
 
             const container = document.getElementById('button-config-area');
             container.innerHTML = "";
 
             for (let i = 0; i < count; i++) {
-                const row = document.createElement('div'); row.className = 'btn-setup-row';
+                const row = document.createElement('div'); 
+                row.className = 'btn-setup-row';
                 
-                const label = document.createElement('span'); label.innerText = `#${i+1}:`;
-                label.style.fontWeight = "bold"; label.style.width = "30px";
+                const label = document.createElement('span'); 
+                label.innerText = `#${i+1}:`;
+                label.style.fontWeight = "bold"; 
+                label.style.width = "30px";
 
+                // Value Input
                 const valInput = document.createElement('input');
-                valInput.type = "number"; valInput.placeholder = "Skadeverdi";
-                valInput.value = (i + 1) * 25; valInput.id = `btn-val-${i}`;
+                valInput.type = "number"; 
+                valInput.placeholder = "Skade";
+                valInput.value = (i + 1) * 25; 
+                valInput.id = `btn-val-${i}`;
 
+                // Color Input
                 const colInput = document.createElement('input');
-                colInput.type = "color"; valInput.style.flexGrow = 1;
-                colInput.value = defaultColors[i % defaultColors.length]; valInput.id = `btn-col-${i}`;
+                colInput.type = "color"; 
+                colInput.value = defaultColors[i % defaultColors.length]; 
                 colInput.id = `btn-col-${i}`;
 
-                row.appendChild(label); row.appendChild(valInput); row.appendChild(colInput);
+                row.appendChild(label); 
+                row.appendChild(valInput); 
+                row.appendChild(colInput);
                 container.appendChild(row);
             }
         }
 
-        // --- GAME START ---
         function startGame() {
+            // Read values
             const monsterIndex = document.getElementById('monster-select').value;
             maxHp = parseInt(document.getElementById('hp-input').value);
-            currentHp = maxHp; gameActive = true;
+            
+            if(isNaN(maxHp)) maxHp = 1000;
+            currentHp = maxHp; 
+            gameActive = true;
 
+            // Update UI
             document.getElementById('boss-name-display').innerText = document.getElementById('boss-name-input').value;
             const img = document.getElementById('monster-img');
             img.src = monsters[monsterIndex].url;
@@ -332,27 +342,38 @@
             
             updateHealthBar();
 
+            // Generate Buttons
             const controlArea = document.getElementById('game-controls');
             controlArea.innerHTML = "";
             const btnCount = parseInt(document.getElementById('btn-count-input').value);
             
             for(let i=0; i<btnCount; i++) {
-                const val = document.getElementById(`btn-val-${i}`).value;
-                const col = document.getElementById(`btn-col-${i}`).value;
-                const btn = document.createElement('button');
-                btn.className = 'action-btn'; btn.innerText = `-${val}`;
-                btn.style.backgroundColor = col;
-                // Make darker text for very bright buttons
-                if(col === "#f1c40f" || col === "#2ecc71") btn.style.color = "#000";
+                // IMPORTANT: These IDs must match what was created in generateButtonConfig
+                const valInput = document.getElementById(`btn-val-${i}`);
+                const colInput = document.getElementById(`btn-col-${i}`);
+                
+                if(valInput && colInput) {
+                    const val = valInput.value;
+                    const col = colInput.value;
+                    
+                    const btn = document.createElement('button');
+                    btn.className = 'action-btn'; 
+                    btn.innerText = `-${val}`;
+                    btn.style.backgroundColor = col;
+                    
+                    // Dark text for bright colors
+                    if(col === "#f1c40f" || col === "#2ecc71") btn.style.color = "#000";
 
-                btn.onclick = () => takeDamage(parseInt(val));
-                controlArea.appendChild(btn);
+                    btn.onclick = () => takeDamage(parseInt(val));
+                    controlArea.appendChild(btn);
+                }
             }
+
+            // Switch Screen
             document.getElementById('menu-screen').classList.remove('active');
             document.getElementById('game-screen').classList.add('active');
         }
 
-        // --- GAME LOOP ---
         function takeDamage(amount) {
             if(!gameActive) return;
             currentHp = Math.max(0, currentHp - amount);
@@ -361,7 +382,7 @@
 
             if(currentHp <= 0) {
                 gameActive = false;
-                setTimeout(defeatMonster, 500); // Small delay before death animation finishes
+                setTimeout(defeatMonster, 500); 
             }
         }
 
@@ -377,21 +398,17 @@
             const img = document.getElementById('monster-img');
             const stage = document.querySelector('.monster-stage');
 
-            // --- THE KEY TO INTERACTIVITY ---
-            // 1. Remove the class if it exists to reset the animation
+            // Reset animation trick
             img.classList.remove('is-hit');
-            // 2. Force a browser reflow (magisk triks for å restarte CSS animasjoner)
             void img.offsetWidth; 
-            // 3. Add the class back to trigger the violent shake/flash animation
             img.classList.add('is-hit');
 
-            // Remove the class after animation completes to return to "idle" float
             setTimeout(() => { img.classList.remove('is-hit'); }, 500);
 
-            // Spawn floating number
+            // Floating Text
             const floatText = document.createElement('div');
             floatText.className = 'damage-number'; floatText.innerText = `-${amount}`;
-            floatText.style.left = (50 + (Math.random() * 20 - 10)) + "%"; // Randomize X pos slightly
+            floatText.style.left = (50 + (Math.random() * 20 - 10)) + "%"; 
             floatText.style.top = "40%";
             stage.appendChild(floatText);
             setTimeout(() => { floatText.remove(); }, 1000);
@@ -399,7 +416,7 @@
 
         function defeatMonster() {
             const img = document.getElementById('monster-img');
-            img.classList.add('dead'); // Triggers slow slump and greyscale
+            img.classList.add('dead'); 
             document.getElementById('boss-name-display').innerText += " (BESEIRET!)";
         }
 
