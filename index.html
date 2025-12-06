@@ -3,14 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Math Boss Battle - Configurable</title>
+    <title>Big Boss Battle</title>
     <style>
         /* --- General Styles --- */
+        :root {
+            --primary-color: #2ecc71;
+            --bg-color: #0a0a0a;
+            --panel-bg: #1a1a1a;
+            --text-color: #e0e0e0;
+        }
         body {
             margin: 0;
             font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            background-color: #0d0d0d; /* Very dark background */
-            color: #e0e0e0;
+            background-color: var(--bg-color);
+            color: var(--text-color);
             height: 100vh;
             overflow: hidden;
             display: flex;
@@ -18,273 +24,216 @@
             align-items: center;
         }
 
-        h1, h2, h3 { text-transform: uppercase; letter-spacing: 2px; margin: 0 0 10px 0; }
+        h1, h2 { text-transform: uppercase; letter-spacing: 2px; margin: 0 0 15px 0; }
         
-        /* --- Screens --- */
+        /* --- Screens & Menu --- */
         .screen {
-            width: 100%;
-            height: 100%;
+            width: 100%; height: 100%;
             display: none; /* Hidden by default */
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
+            flex-direction: column; align-items: center; justify-content: center;
         }
-
         .active { display: flex; }
 
-        /* --- MENU STYLES --- */
         #menu-screen {
-            background: #1a1a1a;
-            padding: 20px;
-            overflow-y: auto;
-            align-items: center;
-            justify-content: flex-start;
-            padding-top: 50px;
+            background: var(--bg-color);
+            padding: 20px; overflow-y: auto;
         }
-
         .config-card {
-            background: #2a2a2a;
-            padding: 25px;
-            border-radius: 10px;
-            border: 1px solid #444;
-            width: 90%;
-            max-width: 600px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            background: var(--panel-bg);
+            padding: 30px; border-radius: 15px;
+            border: 1px solid #333; width: 90%; max-width: 500px;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.7);
         }
-
-        .form-group { margin-bottom: 15px; }
-        label { display: block; margin-bottom: 5px; font-weight: bold; color: #aaa; }
+        .form-group { margin-bottom: 20px; }
+        label { display: block; margin-bottom: 8px; font-weight: bold; color: #bbb; }
         input, select {
-            width: 100%;
-            padding: 10px;
-            background: #111;
-            border: 1px solid #555;
-            color: white;
-            border-radius: 5px;
-            font-size: 1rem;
+            width: 100%; padding: 12px; background: #252525;
+            border: 2px solid #444; color: white; border-radius: 8px; font-size: 1rem;
+            box-sizing: border-box; /* Important for padding calculation */
         }
-        
-        /* Button Config Generator */
+        input:focus, select:focus { border-color: var(--primary-color); outline: none; }
+
         #button-config-area {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-            margin-top: 10px;
-            padding: 10px;
-            background: #222;
-            border-radius: 5px;
+            display: grid; grid-template-columns: 1fr; gap: 10px;
+            margin-top: 15px; padding: 15px; background: #252525; border-radius: 8px;
         }
-        
         .btn-setup-row {
-            grid-column: span 2;
-            display: flex;
-            gap: 10px;
-            align-items: center;
-            background: #333;
-            padding: 10px;
-            border-radius: 5px;
+            display: flex; gap: 10px; align-items: center;
+            background: #333; padding: 10px; border-radius: 5px;
         }
-        .btn-setup-row input[type="number"] { width: 80px; }
-        .btn-setup-row input[type="color"] { width: 50px; height: 40px; padding: 0; border: none; cursor: pointer; }
-
+        .btn-setup-row input[type="number"] { flex-grow: 1; }
+        .btn-setup-row input[type="color"] { width: 50px; height: 45px; padding: 0; border: none; cursor: pointer; }
         .start-btn {
-            background: linear-gradient(45deg, #2ecc71, #27ae60);
-            color: white;
-            font-size: 1.5rem;
-            font-weight: bold;
-            border: none;
-            padding: 15px;
-            width: 100%;
-            margin-top: 20px;
-            cursor: pointer;
-            border-radius: 5px;
-            transition: transform 0.1s;
+            background: linear-gradient(45deg, var(--primary-color), #27ae60);
+            color: white; font-size: 1.3rem; font-weight: bold; border: none;
+            padding: 15px; width: 100%; margin-top: 25px; cursor: pointer;
+            border-radius: 8px; transition: transform 0.2s;
         }
-        .start-btn:hover { transform: scale(1.02); box-shadow: 0 0 15px #2ecc71; }
+        .start-btn:hover { transform: scale(1.03); }
 
-        /* --- GAME STYLES --- */
+        /* --- GAME AREA STYLES --- */
         #game-area {
-            width: 100%;
-            max-width: 1000px;
-            text-align: center;
-            position: relative;
-            flex-grow: 1;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
+            width: 100%; max-width: 1200px; text-align: center;
+            flex-grow: 1; display: flex; flex-direction: column;
+            justify-content: flex-start; align-items: center; padding-top: 20px;
         }
-
         #boss-name-display {
-            font-size: 3rem;
-            color: #ff3333;
-            text-shadow: 0 0 10px #ff0000;
-            margin-bottom: 10px;
+            font-size: 2.5rem; color: #ff4d4d; text-shadow: 0 0 15px rgba(255,0,0,0.5);
         }
 
         /* Health Bar */
         .hp-bar-frame {
-            width: 80%;
-            height: 50px;
-            background: #333;
-            border: 4px solid #111;
-            border-radius: 25px;
-            overflow: hidden;
-            position: relative;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.5);
-            margin-bottom: 30px;
+            width: 60%; height: 40px; background: #222;
+            border: 3px solid #000; border-radius: 20px;
+            overflow: hidden; position: relative;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.6); margin-bottom: 20px;
         }
-
         .hp-fill {
-            height: 100%;
-            width: 100%;
+            height: 100%; width: 100%;
             background: linear-gradient(90deg, #e74c3c, #c0392b);
-            transition: width 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+            transition: width 0.3s ease-out, background 0.3s;
         }
-
         .hp-text {
-            position: absolute;
-            top: 0; left: 0; width: 100%; height: 100%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-            font-size: 1.5rem;
-            text-shadow: 2px 2px 4px black;
-            z-index: 2;
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 900; font-size: 1.2rem; text-shadow: 1px 1px 3px black; z-index: 2;
         }
 
-        /* Monster Image */
-        .monster-wrapper {
+        /* --- ANIMATED MONSTER STYLES --- */
+        .monster-stage {
             position: relative;
-            height: 400px;
+            height: 500px; /* Fixed height for the stage */
             width: 100%;
             display: flex;
             justify-content: center;
             align-items: center;
+            /* Add a subtle shadow on the "floor" */
+            background: radial-gradient(ellipse at bottom, rgba(0,0,0,0.8) 0%, transparent 70%);
         }
 
         #monster-img {
-            max-height: 100%;
-            max-width: 100%;
-            filter: drop-shadow(0 0 20px rgba(0,0,0,0.8));
-            transition: transform 0.1s;
+            max-height: 90%; /* Keep it within the stage */
+            width: auto;
+            filter: drop-shadow(0 10px 20px rgba(0,0,0,0.5));
+            /* The Idle Animation - smooth floating */
+            animation: idleFloat 4s ease-in-out infinite;
+            transition: filter 0.2s; /* Smooth transition for death filter */
         }
 
-        /* Effects */
-        .shake { animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both; }
-        .flash-red { animation: flashRed 0.2s; }
-        .dead { filter: grayscale(100%) brightness(0.5) blur(2px); transform: scale(0.9); transition: 1s; }
-
-        @keyframes shake {
-            10%, 90% { transform: translate3d(-2px, 0, 0); }
-            20%, 80% { transform: translate3d(4px, 0, 0); }
-            30%, 50%, 70% { transform: translate3d(-6px, 0, 0); }
-            40%, 60% { transform: translate3d(6px, 0, 0); }
-        }
-        @keyframes flashRed {
-            0% { filter: sepia(100%) hue-rotate(-50deg) saturate(600%) contrast(2); }
-            100% { filter: none; }
+        /* Idle Animation Keyframes */
+        @keyframes idleFloat {
+            0%, 100% { transform: translateY(0px) scale(1); }
+            50% { transform: translateY(-20px) scale(1.02); } /* Float up and breath slightly */
         }
 
-        /* Floating Numbers */
+        /* --- REACTION ANIMATIONS (When Hit) --- */
+        
+        /* This class is added via JS when hit, overrides idle animation */
+        .is-hit {
+            animation: monsterHitReact 0.5s cubic-bezier(.36,.07,.19,.97) both !important;
+        }
+
+        @keyframes monsterHitReact {
+            0% { transform: scale(1) translate(0, 0); filter: sepia(0) hue-rotate(0) saturate(1); }
+            
+            /* Flash Red and recoil / shrink */
+            10%, 30% { 
+                transform: scale(0.9) translate(-5px, 5px); 
+                filter: sepia(100%) hue-rotate(-50deg) saturate(600%) contrast(1.5); 
+            }
+            20%, 40% { 
+                transform: scale(0.9) translate(5px, -5px); 
+                filter: sepia(100%) hue-rotate(-50deg) saturate(600%) contrast(1.5);
+            }
+            50% { transform: scale(0.95) translate(-2px, 2px); }
+            60% { transform: scale(0.95) translate(2px, -2px); }
+
+            /* Return to normal */
+            100% { transform: scale(1) translate(0, 0); filter: sepia(0) hue-rotate(0) saturate(1); }
+        }
+
+        .dead {
+            filter: grayscale(100%) brightness(0.4) sepia(30%) !important; /* Dark and dead looking */
+            animation: none !important; /* Stop moving */
+            transform: translateY(30px) scale(0.9); /* Slump down */
+            transition: 1s all ease-out;
+        }
+
+
+        /* Floating Damage Numbers */
         .damage-number {
-            position: absolute;
-            font-size: 4rem;
-            font-weight: 900;
-            color: #ffcc00;
-            text-shadow: 3px 3px 0 #000;
-            pointer-events: none;
-            animation: floatUp 1s ease-out forwards;
+            position: absolute; font-size: 4rem; font-weight: 900;
+            color: #ffcc00; text-shadow: 3px 3px 0 #000, -1px -1px 0 #fff;
+            pointer-events: none; z-index: 10;
+            animation: popUp 1s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+        @keyframes popUp {
+            0% { transform: translateY(50px) scale(0.5); opacity: 0; }
+            20% { transform: translateY(0) scale(1.2); opacity: 1; }
+            100% { transform: translateY(-100px) scale(1); opacity: 0; }
         }
 
-        @keyframes floatUp {
-            0% { transform: translateY(0) scale(1); opacity: 1; }
-            100% { transform: translateY(-150px) scale(1.5); opacity: 0; }
-        }
-
-        /* Button Grid */
+        /* Controls Grid */
         #game-controls {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 15px;
-            justify-content: center;
-            padding: 20px;
-            width: 100%;
-            background: rgba(0,0,0,0.6);
-            backdrop-filter: blur(5px);
-            position: fixed;
-            bottom: 0;
-            border-top: 2px solid #333;
+            display: flex; flex-wrap: wrap; gap: 15px; justify-content: center;
+            padding: 25px; width: 100%; background: rgba(20,20,20,0.95);
+            position: fixed; bottom: 0; border-top: 3px solid #333;
+            box-shadow: 0 -10px 30px rgba(0,0,0,0.5);
         }
-
         .action-btn {
-            padding: 20px 40px;
-            font-size: 2rem;
-            font-weight: bold;
-            color: white;
-            border: none;
-            border-radius: 12px;
-            cursor: pointer;
-            box-shadow: 0 6px rgba(0,0,0,0.4);
-            transition: all 0.1s;
-            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
-            min-width: 120px;
+            padding: 15px 30px; font-size: 1.8rem; font-weight: 800; color: white;
+            border: none; border-radius: 12px; cursor: pointer;
+            box-shadow: 0 8px rgba(0,0,0,0.3), inset 0 -2px 0 rgba(0,0,0,0.2);
+            transition: all 0.1s; flex: 1 0 150px; max-width: 250px;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.5); position: relative; top: 0;
         }
-
-        .action-btn:active {
-            transform: translateY(4px);
-            box-shadow: 0 0 rgba(0,0,0,0.4);
-        }
-
-        /* Reset Button */
+        .action-btn:active { top: 6px; box-shadow: 0 2px rgba(0,0,0,0.3); }
         #reset-btn {
-            position: absolute;
-            top: 20px; left: 20px;
-            background: #444; color: white;
-            border: none; padding: 10px 20px;
-            cursor: pointer; border-radius: 5px;
+            position: absolute; top: 20px; left: 20px; background: #444;
+            color: #ccc; border: none; padding: 8px 15px; cursor: pointer; border-radius: 5px;
         }
+        #reset-btn:hover { color: white; background: #555; }
     </style>
 </head>
 <body>
 
     <div id="menu-screen" class="screen active">
         <div class="config-card">
-            <h2>⚙️ Boss Setup</h2>
-            <hr style="border-color: #444; margin-bottom: 20px;">
+            <h2>⚙️ Oppsett av Boss</h2>
+            <hr style="border-color: #444; margin-bottom: 25px; opacity: 0.5;">
 
             <div class="form-group">
-                <label>Velg Monster:</label>
+                <label for="monster-select">Velg Monster (Animerte):</label>
                 <select id="monster-select" onchange="previewMonsterName()">
                     </select>
             </div>
 
-            <div class="form-group">
-                <label>Navn på Boss:</label>
-                <input type="text" id="boss-name-input">
+            <div class="form-group" style="display: flex; gap: 10px;">
+                <div style="flex: 2;">
+                    <label>Navn på Boss:</label>
+                    <input type="text" id="boss-name-input">
+                </div>
+                 <div style="flex: 1;">
+                    <label>Maks HP:</label>
+                    <input type="number" id="hp-input" value="1000" step="50">
+                </div>
             </div>
 
             <div class="form-group">
-                <label>Maks HP:</label>
-                <input type="number" id="hp-input" value="1000" step="50">
-            </div>
-
-            <div class="form-group">
-                <label>Antall knapper:</label>
+                <label>Antall angrepsknapper (1-6):</label>
                 <input type="number" id="btn-count-input" value="3" min="1" max="6" onchange="generateButtonConfig()">
             </div>
 
-            <label>Knappe-innstillinger (Skade | Farge):</label>
+            <label style="margin-top: 20px;">Knappe-verdier og farger:</label>
             <div id="button-config-area">
                 </div>
 
-            <button class="start-btn" onclick="startGame()">⚔️ START KAMP ⚔️</button>
+            <button class="start-btn" onclick="startGame()">START KAMPEN</button>
         </div>
     </div>
 
     <div id="game-screen" class="screen">
-        <button id="reset-btn" onclick="goToMenu()">Esc (Meny)</button>
+        <button id="reset-btn" onclick="goToMenu()">← Meny</button>
 
         <div id="game-area">
             <h1 id="boss-name-display">Boss Navn</h1>
@@ -294,8 +243,8 @@
                 <div class="hp-fill" id="hp-fill"></div>
             </div>
 
-            <div class="monster-wrapper">
-                <img id="monster-img" src="" alt="Monster">
+            <div class="monster-stage">
+                <img id="monster-img" src="" alt="Monster Animated">
                 </div>
         </div>
 
@@ -304,198 +253,158 @@
     </div>
 
     <script>
-        // --- DATA ---
-        // Liste over monstre med bilder. 
-        // Bruker åpne, stabile illustrasjoner.
+        // --- DATA: Animated Monsters ---
+        // Vi bruker lenker til animerte GIF-er med gjennomsiktig bakgrunn.
         const monsters = [
-            { name: "Inferno Drage", url: "https://image.lexica.art/full_jpg/09409b30-316a-4c22-9a00-3323087227d8", defaultHp: 2000 },
-            { name: "Skygge Enhjørning", url: "https://image.lexica.art/full_jpg/1423403e-8c3b-489e-b187-5750868f0376", defaultHp: 1500 },
-            { name: "Grotte Trollet", url: "https://image.lexica.art/full_jpg/2c9c7c25-1e35-4309-87c1-2e6b72045b85", defaultHp: 1000 },
-            { name: "Cyclops Titan", url: "https://image.lexica.art/full_jpg/5a22540b-7414-41d3-bb74-325292415d86", defaultHp: 1200 },
-            { name: "Hydra", url: "https://image.lexica.art/full_jpg/cf598a00-4b2a-43d9-9524-7389823d069a", defaultHp: 3000 },
-            { name: "Kraken", url: "https://image.lexica.art/full_jpg/b94d7564-9d5a-4933-b6d5-116d97c75685", defaultHp: 2500 }
+            { name: "Den Røde Dragen", url: "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExajZ4bnZ5a3Z6a3Z4bnZ5a3Z6a3Z4bnZ5a3Z6a3Z4bnZ5a3Z6aSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9cw/14bOa08X7G5T7G/giphy.gif", defaultHp: 2500 },
+            { name: "Mørkets Trollmann", url: "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExa3Z4bnZ5a3Z6a3Z4bnZ5a3Z6a3Z4bnZ5a3Z6a3Z4bnZ5a3Z6aSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9cw/l0HlFW9YjX3j9gX1S/giphy.gif", defaultHp: 1500 },
+            { name: "Sumptrollet", url: "https://media0.giphy.com/media/BHNpk90P7T8nS/giphy.gif?cid=ecf05e47b9u4u6u6u6u6u6u6u6u6u6u6u6u6u6u6&rid=giphy.gif", defaultHp: 3000 },
+            { name: "Skjelettkrigeren", url: "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExa3Z4bnZ5a3Z6a3Z4bnZ5a3Z6a3Z4bnZ5a3Z6a3Z4bnZ5a3Z6aSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9cw/3o7TKSjRrfIPjeiVyM/giphy.gif", defaultHp: 1000 },
+            { name: "Beholder (Øyet)", url: "https://media3.giphy.com/media/KqC7vU1v6lGyk/giphy.gif?cid=ecf05e47b9u4u6u6u6u6u6u6u6u6u6u6u6u6u6u6&rid=giphy.gif", defaultHp: 2000 }
         ];
 
-        // Default button colors
-        const defaultColors = ["#e74c3c", "#3498db", "#f1c40f", "#9b59b6", "#2ecc71", "#e67e22"];
+        const defaultColors = ["#2ecc71", "#3498db", "#9b59b6", "#f1c40f", "#e67e22", "#e74c3c"];
 
-        // --- STATE VARIABLES ---
         let currentHp = 0;
         let maxHp = 0;
         let gameActive = false;
 
-        // --- INIT ---
         window.onload = function() {
             populateMonsterSelect();
-            generateButtonConfig(); // Generate default buttons
+            generateButtonConfig();
         };
 
-        // Populate the dropdown menu
+        // --- MENU FUNCTIONS ---
         function populateMonsterSelect() {
             const select = document.getElementById('monster-select');
             monsters.forEach((m, index) => {
                 const opt = document.createElement('option');
-                opt.value = index;
-                opt.innerText = m.name;
+                opt.value = index; opt.innerText = m.name;
                 select.appendChild(opt);
             });
             previewMonsterName();
         }
 
-        // Set input name when monster changes
         function previewMonsterName() {
             const index = document.getElementById('monster-select').value;
             document.getElementById('boss-name-input').value = monsters[index].name;
             document.getElementById('hp-input').value = monsters[index].defaultHp;
         }
 
-        // Generate the inputs for buttons (Value & Color)
         function generateButtonConfig() {
-            const count = parseInt(document.getElementById('btn-count-input').value);
+            let count = parseInt(document.getElementById('btn-count-input').value);
+            if(count < 1) count = 1; if(count > 6) count = 6;
+            document.getElementById('btn-count-input').value = count;
+
             const container = document.getElementById('button-config-area');
-            container.innerHTML = ""; // Clear
+            container.innerHTML = "";
 
             for (let i = 0; i < count; i++) {
-                const row = document.createElement('div');
-                row.className = 'btn-setup-row';
+                const row = document.createElement('div'); row.className = 'btn-setup-row';
+                
+                const label = document.createElement('span'); label.innerText = `#${i+1}:`;
+                label.style.fontWeight = "bold"; label.style.width = "30px";
 
-                // Input for Damage Value
                 const valInput = document.createElement('input');
-                valInput.type = "number";
-                valInput.placeholder = "HP";
-                valInput.value = (i + 1) * 10; // Default values 10, 20, 30...
-                valInput.id = `btn-val-${i}`;
+                valInput.type = "number"; valInput.placeholder = "Skadeverdi";
+                valInput.value = (i + 1) * 25; valInput.id = `btn-val-${i}`;
 
-                // Input for Color
                 const colInput = document.createElement('input');
-                colInput.type = "color";
-                colInput.value = defaultColors[i % defaultColors.length];
+                colInput.type = "color"; valInput.style.flexGrow = 1;
+                colInput.value = defaultColors[i % defaultColors.length]; valInput.id = `btn-col-${i}`;
                 colInput.id = `btn-col-${i}`;
 
-                const label = document.createElement('span');
-                label.innerText = `Knapp ${i+1}`;
-
-                row.appendChild(label);
-                row.appendChild(valInput);
-                row.appendChild(colInput);
+                row.appendChild(label); row.appendChild(valInput); row.appendChild(colInput);
                 container.appendChild(row);
             }
         }
 
-        // --- GAME LOGIC ---
-
+        // --- GAME START ---
         function startGame() {
-            // Get Config Data
             const monsterIndex = document.getElementById('monster-select').value;
-            const customName = document.getElementById('boss-name-input').value;
             maxHp = parseInt(document.getElementById('hp-input').value);
-            const btnCount = parseInt(document.getElementById('btn-count-input').value);
+            currentHp = maxHp; gameActive = true;
 
-            // Set State
-            currentHp = maxHp;
-            gameActive = true;
-
-            // Setup UI
-            document.getElementById('boss-name-display').innerText = customName;
+            document.getElementById('boss-name-display').innerText = document.getElementById('boss-name-input').value;
             const img = document.getElementById('monster-img');
             img.src = monsters[monsterIndex].url;
-            img.classList.remove('dead'); // Reset if previously dead
+            img.classList.remove('dead');
             
             updateHealthBar();
 
-            // Generate Action Buttons
             const controlArea = document.getElementById('game-controls');
             controlArea.innerHTML = "";
+            const btnCount = parseInt(document.getElementById('btn-count-input').value);
             
             for(let i=0; i<btnCount; i++) {
                 const val = document.getElementById(`btn-val-${i}`).value;
                 const col = document.getElementById(`btn-col-${i}`).value;
-
                 const btn = document.createElement('button');
-                btn.className = 'action-btn';
-                btn.innerText = `-${val}`;
+                btn.className = 'action-btn'; btn.innerText = `-${val}`;
                 btn.style.backgroundColor = col;
+                // Make darker text for very bright buttons
+                if(col === "#f1c40f" || col === "#2ecc71") btn.style.color = "#000";
+
                 btn.onclick = () => takeDamage(parseInt(val));
                 controlArea.appendChild(btn);
             }
-
-            // Switch Screens
             document.getElementById('menu-screen').classList.remove('active');
             document.getElementById('game-screen').classList.add('active');
         }
 
+        // --- GAME LOOP ---
         function takeDamage(amount) {
             if(!gameActive) return;
-
-            // Math Logic
-            currentHp -= amount;
-            if(currentHp < 0) currentHp = 0;
-
-            // Visual Logic
+            currentHp = Math.max(0, currentHp - amount);
             updateHealthBar();
             triggerDamageVisuals(amount);
 
-            // Win Condition
             if(currentHp <= 0) {
                 gameActive = false;
-                defeatMonster();
+                setTimeout(defeatMonster, 500); // Small delay before death animation finishes
             }
         }
 
         function updateHealthBar() {
             const pct = (currentHp / maxHp) * 100;
             const fill = document.getElementById('hp-fill');
-            const text = document.getElementById('hp-text');
-
             fill.style.width = pct + "%";
-            text.innerText = `${currentHp} / ${maxHp}`;
-
-            // Color changes
-            if(pct > 50) fill.style.background = "linear-gradient(90deg, #e74c3c, #c0392b)";
-            else if(pct > 25) fill.style.background = "#f1c40f";
-            else fill.style.background = "#e74c3c";
+            document.getElementById('hp-text').innerText = `${currentHp} / ${maxHp}`;
+            fill.style.background = pct > 50 ? "linear-gradient(90deg, #e74c3c, #c0392b)" : pct > 25 ? "#f1c40f" : "#e74c3c";
         }
 
         function triggerDamageVisuals(amount) {
             const img = document.getElementById('monster-img');
-            const wrapper = document.querySelector('.monster-wrapper');
+            const stage = document.querySelector('.monster-stage');
 
-            // 1. Shake
-            img.classList.remove('shake');
-            void img.offsetWidth; // Trigger reflow
-            img.classList.add('shake');
+            // --- THE KEY TO INTERACTIVITY ---
+            // 1. Remove the class if it exists to reset the animation
+            img.classList.remove('is-hit');
+            // 2. Force a browser reflow (magisk triks for å restarte CSS animasjoner)
+            void img.offsetWidth; 
+            // 3. Add the class back to trigger the violent shake/flash animation
+            img.classList.add('is-hit');
 
-            // 2. Flash Red
-            img.classList.remove('flash-red');
-            void img.offsetWidth;
-            img.classList.add('flash-red');
+            // Remove the class after animation completes to return to "idle" float
+            setTimeout(() => { img.classList.remove('is-hit'); }, 500);
 
-            // 3. Floating Text
+            // Spawn floating number
             const floatText = document.createElement('div');
-            floatText.className = 'damage-number';
-            floatText.innerText = `-${amount}`;
-            
-            // Random offset for text to avoid overlapping perfectly
-            const rndX = Math.floor(Math.random() * 60) - 30;
-            floatText.style.transform = `translateX(${rndX}px)`;
-            
-            wrapper.appendChild(floatText);
-
-            // Remove text after animation
+            floatText.className = 'damage-number'; floatText.innerText = `-${amount}`;
+            floatText.style.left = (50 + (Math.random() * 20 - 10)) + "%"; // Randomize X pos slightly
+            floatText.style.top = "40%";
+            stage.appendChild(floatText);
             setTimeout(() => { floatText.remove(); }, 1000);
         }
 
         function defeatMonster() {
             const img = document.getElementById('monster-img');
-            const name = document.getElementById('boss-name-display');
-            
-            img.classList.add('dead');
-            name.innerText += " ER DØD!";
-            name.style.color = "#555";
+            img.classList.add('dead'); // Triggers slow slump and greyscale
+            document.getElementById('boss-name-display').innerText += " (BESEIRET!)";
         }
 
         function goToMenu() {
-            if(confirm("Gå tilbake til menyen? Nåværende spill nullstilles.")) {
+            if(confirm("Avslutt kampen og gå til menyen?")) {
                 document.getElementById('game-screen').classList.remove('active');
                 document.getElementById('menu-screen').classList.add('active');
             }
