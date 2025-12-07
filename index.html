@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ultimate Video Boss</title>
+    <title>Ultimate Video Boss - Med Lyd</title>
     <style>
         /* --- GENERELT --- */
         body { margin: 0; font-family: 'Segoe UI', sans-serif; background-color: #050505; color: #fff; height: 100vh; overflow: hidden; display: flex; flex-direction: column; align-items: center; }
@@ -26,7 +26,7 @@
         .btn-row { display: flex; gap: 10px; margin-top: 10px; }
         input[type="color"] { width: 50px; padding: 0; border: none; height: 42px; cursor: pointer; }
         
-        .start-btn { background: linear-gradient(45deg, #e67e22, #d35400); color: white; font-size: 1.5rem; font-weight: bold; border: none; padding: 15px; width: 100%; margin-top: 30px; cursor: pointer; border-radius: 8px; }
+        .start-btn { background: linear-gradient(45deg, #27ae60, #2ecc71); color: white; font-size: 1.5rem; font-weight: bold; border: none; padding: 15px; width: 100%; margin-top: 30px; cursor: pointer; border-radius: 8px; }
         #back-btn { position: absolute; top: 15px; left: 15px; z-index: 200; background: #444; color: #fff; border: 1px solid #777; padding: 8px 15px; cursor: pointer; border-radius: 5px; font-weight: bold; }
 
         /* --- SPILL --- */
@@ -50,7 +50,7 @@
             position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
             max-width: 100%; max-height: 100%;
             width: auto; height: auto;
-            transition: opacity 0.2s; /* Myk overgang */
+            transition: opacity 0.2s;
         }
 
         /* Standard tilstand: Bare idle synes */
@@ -67,7 +67,7 @@
         .show-crit #vid-crit { opacity: 1; }
 
         .show-death #vid-idle { opacity: 0; }
-        .show-death #vid-death { opacity: 1; } /* Denne blir stående */
+        .show-death #vid-death { opacity: 1; }
 
         /* --- TEKST EFFEKT --- */
         .damage-text { position: absolute; font-size: 4rem; font-weight: 900; color: #f1c40f; text-shadow: 2px 2px 0 #000; pointer-events: none; animation: floatUp 1s forwards; z-index: 20; }
@@ -83,12 +83,13 @@
 
     <div id="menu-screen">
         <div class="config-card">
-            <h2 style="margin-top:0;">🎥 4-Fase Boss Setup</h2>
+            <h2 style="margin-top:0;">🔊 Video Boss (Med Lyd)</h2>
+            <p style="font-size: 0.9rem; color: #888; margin-top:-10px;">NB: Husk å sett en knapp til 100+ skade for å se Video 3.</p>
             
             <label>Boss Navn:</label>
             <input type="text" id="inp-name" value="Megabossen">
 
-            <label>1. Loop (Idle):</label>
+            <label>1. Loop (Idle - Går hele tiden):</label>
             <div class="file-box">
                 <label for="upload-idle" class="file-label">📁 Velg fil...</label>
                 <input id="upload-idle" type="file" accept="video/*" onchange="handleVideoUpload(this, 'status-idle')">
@@ -124,7 +125,7 @@
 
             <div id="btn-config"></div>
 
-            <button class="start-btn" onclick="startGame()">Start Spillet</button>
+            <button class="start-btn" onclick="startGame()">Start Spillet (Klikk her aktiverer lyd)</button>
         </div>
     </div>
 
@@ -139,10 +140,11 @@
             </div>
 
             <div class="stage" id="stage-area">
-                <video id="vid-idle" loop muted playsinline></video>
-                <video id="vid-react" muted playsinline></video>
-                <video id="vid-crit" muted playsinline></video>
-                <video id="vid-death" muted playsinline></video> </div>
+                <video id="vid-idle" loop playsinline></video>
+                <video id="vid-react" playsinline></video>
+                <video id="vid-crit" playsinline></video>
+                <video id="vid-death" playsinline></video>
+            </div>
         </div>
 
         <div id="controls"></div>
@@ -205,12 +207,14 @@
             setVidSource('vid-crit', vidSrc.crit);
             setVidSource('vid-death', vidSrc.death);
 
-            // Nullstill visning (Fjern alle "show-" klasser)
+            // Nullstill visning
             const stage = document.getElementById('stage-area');
             stage.className = 'stage'; 
             
-            // Start idle loop
-            document.getElementById('vid-idle').play();
+            // Start idle loop (prøv å spille med lyd)
+            const vIdle = document.getElementById('vid-idle');
+            vIdle.volume = 1.0; 
+            vIdle.play().catch(e => console.log("Lyd kan være blokkert til du klikker mer: ", e));
 
             // Lag knapper
             const ctrlDiv = document.getElementById('controls'); ctrlDiv.innerHTML = '';
@@ -232,20 +236,28 @@
 
         function setVidSource(id, src) {
             const v = document.getElementById(id);
-            if(src) v.src = src;
-            else v.removeAttribute('src'); 
+            if(src) {
+                v.src = src;
+                v.load(); // Sikre at den laster på nytt
+            } else {
+                v.removeAttribute('src'); 
+            }
         }
 
         function backToMenu() {
             if(confirm("Gå tilbake?")) {
                 document.getElementById('game-screen').classList.add('hidden');
                 document.getElementById('menu-screen').classList.remove('hidden');
+                
+                // Stopp alle videoer og lyd når vi går tilbake
+                const allVids = document.querySelectorAll('video');
+                allVids.forEach(v => v.pause());
             }
         }
 
         // --- LOGIKK FOR SKADE OG VIDEOVALG ---
         function takeDamage(amount) {
-            if(isDead) return; // Ingen skade hvis død
+            if(isDead) return;
 
             currentHp -= amount; if(currentHp < 0) currentHp = 0;
             updateHpBar();
@@ -258,10 +270,17 @@
                 return;
             }
 
-            // 2. SJEKK TYPE SKADE (Kritisk eller Vanlig)
+            // 2. SJEKK TYPE SKADE
+            // Hvis skaden er >= 100 OG vi har kritisk video -> Spill Video 3
             if(amount >= 100 && vidSrc.crit) {
                 playOneShot('vid-crit', 'show-crit');
-            } else if(vidSrc.react) {
+            } 
+            // Ellers spill Video 2 (React)
+            else if(vidSrc.react) {
+                playOneShot('vid-react', 'show-react');
+            }
+            // Hvis vi burde spilt Video 3 men mangler den, spill Video 2 som backup
+            else if(amount >= 100 && !vidSrc.crit && vidSrc.react) {
                 playOneShot('vid-react', 'show-react');
             }
         }
@@ -274,14 +293,18 @@
             // Aktiver riktig video
             stage.className = 'stage ' + cssClass;
             
+            // Stopp idle midlertidig (for å unngå dobbel lyd)
+            idle.pause();
+
             video.currentTime = 0;
+            video.volume = 1.0;
             video.play();
 
             // Når ferdig -> Gå tilbake til Idle
             video.onended = function() {
-                if(!isDead) { // Bare gå tilbake hvis monsteret ikke døde mens videoen spilte
+                if(!isDead) {
                     stage.className = 'stage'; 
-                    idle.play();
+                    idle.play(); // Start idle igjen (med lyd)
                 }
             };
         }
@@ -289,24 +312,18 @@
         function playDeathSequence() {
             document.getElementById('boss-name').innerText += " (DØD!)";
             
-            // Hvis ingen dødsvideo er valgt, frys bare skjermen
             if(!vidSrc.death) return;
 
             const stage = document.getElementById('stage-area');
             const deathVid = document.getElementById('vid-death');
             const idle = document.getElementById('vid-idle');
 
-            // Stopp idle videoen for å spare ressurser/lyd
-            idle.pause();
+            idle.pause(); // Stopp idle lyd
 
-            // Vis døds-videoen
             stage.className = 'stage show-death';
             deathVid.currentTime = 0;
+            deathVid.volume = 1.0;
             deathVid.play();
-
-            // VIKTIG: Vi fjerner IKKE klassen når den er ferdig ('onended'). 
-            // Videoen vil stoppe på siste bilde (eller loope hvis den er laget for det),
-            // og den vil bli liggende på toppen fordi z-index er høyest (4).
         }
 
         function updateHpBar() {
