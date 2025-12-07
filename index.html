@@ -113,13 +113,13 @@
 
     <div id="menu-screen">
         <div class="config-card">
-            <h2 style="margin-top:0;">🔊 Video Boss (Stor Skjerm)</h2>
+            <h2 style="margin-top:0;">🔊 Big Boss Game </h2>
             <p style="font-size: 0.9rem; color: #888; margin-top:-10px;">NB: Husk å sett en knapp til 100+ skade for å se Video 3.</p>
             
             <label>Boss Navn:</label>
-            <input type="text" id="inp-name" value="Megabossen">
+            <input type="text" id="inp-name" value="Serpentinen">
 
-            <label>1. Loop (Idle - Går hele tiden):</label>
+            <label>1. Basevideo (loop) :</label>
             <div class="file-box">
                 <label for="upload-idle" class="file-label">📁 Velg fil...</label>
                 <input id="upload-idle" type="file" accept="video/*" onchange="handleVideoUpload(this, 'status-idle')">
@@ -140,7 +140,7 @@
                 <span id="status-crit" class="file-status">Ingen valgt</span>
             </div>
 
-            <label>4. DØD (Overstyrer alt til slutt):</label>
+            <label>4. Dødsanimasjon:</label>
             <div class="file-box">
                 <label for="upload-death" class="file-label">📁 Velg fil...</label>
                 <input id="upload-death" type="file" accept="video/*" onchange="handleVideoUpload(this, 'status-death')">
@@ -151,7 +151,7 @@
             <input type="number" id="inp-hp" value="1000">
 
             <label>Antall knapper:</label>
-            <input type="number" id="inp-count" value="4" min="1" max="6" onchange="createBtnInputs()">
+            <input type="number" id="inp-count" value="3" min="1" max="6" onchange="createBtnInputs()">
 
             <div id="btn-config"></div>
 
