@@ -3,23 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Video Boss Battle</title>
+    <title>Ultimate Video Boss</title>
     <style>
         /* --- GENERELT --- */
         body { margin: 0; font-family: 'Segoe UI', sans-serif; background-color: #050505; color: #fff; height: 100vh; overflow: hidden; display: flex; flex-direction: column; align-items: center; }
 
         /* --- MENY --- */
         #menu-screen { background: #1a1a1a; overflow-y: auto; padding: 20px; z-index: 100; width: 100%; height: 100%; position: absolute; display: flex; flex-direction: column; align-items: center; }
-        .config-card { background: #2a2a2a; padding: 30px; border-radius: 15px; border: 1px solid #444; width: 90%; max-width: 600px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); margin-top: 20px; }
+        .config-card { background: #2a2a2a; padding: 30px; border-radius: 15px; border: 1px solid #444; width: 90%; max-width: 600px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); margin-top: 20px; margin-bottom: 20px; }
         .hidden { display: none !important; }
 
         label { display: block; margin-top: 15px; margin-bottom: 5px; font-weight: bold; color: #ccc; }
         input[type="text"], input[type="number"] { width: 100%; padding: 10px; background: #111; border: 1px solid #555; color: white; border-radius: 5px; box-sizing: border-box; }
         
         /* FIL-OPPLASTING STIL */
-        .file-box { border: 2px dashed #444; padding: 15px; background: #151515; border-radius: 8px; text-align: center; margin-bottom: 10px; }
-        .file-label { color: #3498db; cursor: pointer; font-weight: bold; display: block; }
-        .file-status { display: block; margin-top: 5px; font-size: 0.8rem; color: #888; font-style: italic; }
+        .file-box { border: 2px dashed #444; padding: 10px; background: #151515; border-radius: 8px; text-align: center; margin-bottom: 5px; display: flex; justify-content: space-between; align-items: center;}
+        .file-label { color: #3498db; cursor: pointer; font-weight: bold; flex-grow: 1; text-align: left; padding-left: 10px;}
+        .file-status { font-size: 0.8rem; color: #888; font-style: italic; margin-right: 10px;}
         input[type="file"] { display: none; }
 
         /* KNAPPER */
@@ -45,19 +45,29 @@
             overflow: hidden; 
         }
 
-        /* VIKTIG: Begge videoene ligger oppå hverandre */
+        /* LAGOPSYSTEM FOR VIDEOER */
         video {
             position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
             max-width: 100%; max-height: 100%;
             width: auto; height: auto;
+            transition: opacity 0.2s; /* Myk overgang */
         }
 
-        #vid-idle { z-index: 1; opacity: 1; }
-        #vid-react { z-index: 2; opacity: 0; pointer-events: none; } /* Skjult som standard */
+        /* Standard tilstand: Bare idle synes */
+        #vid-idle   { z-index: 1; opacity: 1; }
+        #vid-react  { z-index: 2; opacity: 0; }
+        #vid-crit   { z-index: 3; opacity: 0; }
+        #vid-death  { z-index: 4; opacity: 0; }
 
-        /* Klasser for å vise reaksjon */
-        .playing-reaction #vid-idle { opacity: 0; }
-        .playing-reaction #vid-react { opacity: 1; }
+        /* Klasser som aktiveres av JS */
+        .show-react #vid-idle { opacity: 0; }
+        .show-react #vid-react { opacity: 1; }
+
+        .show-crit #vid-idle { opacity: 0; }
+        .show-crit #vid-crit { opacity: 1; }
+
+        .show-death #vid-idle { opacity: 0; }
+        .show-death #vid-death { opacity: 1; } /* Denne blir stående */
 
         /* --- TEKST EFFEKT --- */
         .damage-text { position: absolute; font-size: 4rem; font-weight: 900; color: #f1c40f; text-shadow: 2px 2px 0 #000; pointer-events: none; animation: floatUp 1s forwards; z-index: 20; }
@@ -73,30 +83,44 @@
 
     <div id="menu-screen">
         <div class="config-card">
-            <h2 style="margin-top:0;">🎥 Video Boss Setup</h2>
+            <h2 style="margin-top:0;">🎥 4-Fase Boss Setup</h2>
             
             <label>Boss Navn:</label>
-            <input type="text" id="inp-name" value="Video Monsteret">
+            <input type="text" id="inp-name" value="Megabossen">
 
-            <label>Video 1: Loop (Vanlig tilstand)</label>
+            <label>1. Loop (Idle):</label>
             <div class="file-box">
-                <label for="upload-idle" class="file-label">📁 Velg Loop-video</label>
+                <label for="upload-idle" class="file-label">📁 Velg fil...</label>
                 <input id="upload-idle" type="file" accept="video/*" onchange="handleVideoUpload(this, 'status-idle')">
-                <span id="status-idle" class="file-status">Ingen video valgt</span>
+                <span id="status-idle" class="file-status">Ingen valgt</span>
             </div>
 
-            <label>Video 2: Reaksjon (Når den tar skade)</label>
+            <label>2. Vanlig Skade (Under 100 hp):</label>
             <div class="file-box">
-                <label for="upload-react" class="file-label">📁 Velg Skade-video</label>
+                <label for="upload-react" class="file-label">📁 Velg fil...</label>
                 <input id="upload-react" type="file" accept="video/*" onchange="handleVideoUpload(this, 'status-react')">
-                <span id="status-react" class="file-status">Ingen video valgt</span>
+                <span id="status-react" class="file-status">Ingen valgt</span>
+            </div>
+
+            <label>3. KRITISK Skade (100 hp eller mer):</label>
+            <div class="file-box">
+                <label for="upload-crit" class="file-label">📁 Velg fil...</label>
+                <input id="upload-crit" type="file" accept="video/*" onchange="handleVideoUpload(this, 'status-crit')">
+                <span id="status-crit" class="file-status">Ingen valgt</span>
+            </div>
+
+            <label>4. DØD (Overstyrer alt til slutt):</label>
+            <div class="file-box">
+                <label for="upload-death" class="file-label">📁 Velg fil...</label>
+                <input id="upload-death" type="file" accept="video/*" onchange="handleVideoUpload(this, 'status-death')">
+                <span id="status-death" class="file-status">Ingen valgt</span>
             </div>
 
             <label>Maks HP:</label>
-            <input type="number" id="inp-hp" value="500">
+            <input type="number" id="inp-hp" value="1000">
 
             <label>Antall knapper:</label>
-            <input type="number" id="inp-count" value="3" min="1" max="6" onchange="createBtnInputs()">
+            <input type="number" id="inp-count" value="4" min="1" max="6" onchange="createBtnInputs()">
 
             <div id="btn-config"></div>
 
@@ -116,19 +140,20 @@
 
             <div class="stage" id="stage-area">
                 <video id="vid-idle" loop muted playsinline></video>
-                
                 <video id="vid-react" muted playsinline></video>
-            </div>
+                <video id="vid-crit" muted playsinline></video>
+                <video id="vid-death" muted playsinline></video> </div>
         </div>
 
         <div id="controls"></div>
     </div>
 
     <script>
-        // State
-        let currentHp = 0; let maxHp = 0;
-        let idleVideoSrc = null;
-        let reactVideoSrc = null;
+        // Data
+        let currentHp = 0; let maxHp = 0; let isDead = false;
+        
+        // Lagre URL-er til videoene
+        let vidSrc = { idle: null, react: null, crit: null, death: null };
         const defaultCols = ['#27ae60', '#2980b9', '#8e44ad', '#f39c12', '#d35400', '#c0392b'];
 
         window.onload = createBtnInputs;
@@ -137,15 +162,18 @@
         function handleVideoUpload(input, statusId) {
             if (input.files && input.files[0]) {
                 const file = input.files[0];
-                const url = URL.createObjectURL(file); // Lager en midlertidig lenke til filen
-                document.getElementById(statusId).innerText = "Valgt: " + file.name;
+                const url = URL.createObjectURL(file);
+                document.getElementById(statusId).innerText = file.name;
                 
-                if(statusId === 'status-idle') idleVideoSrc = url;
-                if(statusId === 'status-react') reactVideoSrc = url;
+                // Lagre basert på ID
+                if(statusId === 'status-idle') vidSrc.idle = url;
+                if(statusId === 'status-react') vidSrc.react = url;
+                if(statusId === 'status-crit') vidSrc.crit = url;
+                if(statusId === 'status-death') vidSrc.death = url;
             }
         }
 
-        // --- KNAPPE GENERERING ---
+        // --- KNAPPER ---
         function createBtnInputs() {
             const count = document.getElementById('inp-count').value;
             const container = document.getElementById('btn-config');
@@ -160,27 +188,29 @@
             }
         }
 
-        // --- START SPILL ---
+        // --- START ---
         function startGame() {
-            if(!idleVideoSrc) { alert("Du må velge en Loop-video!"); return; }
+            if(!vidSrc.idle) { alert("Du MÅ velge en Loop-video (Video 1)!"); return; }
 
             const name = document.getElementById('inp-name').value;
             maxHp = parseInt(document.getElementById('inp-hp').value);
-            currentHp = maxHp;
+            currentHp = maxHp; isDead = false;
 
             document.getElementById('boss-name').innerText = name;
             updateHpBar();
 
-            // Sett opp videoene
-            const vIdle = document.getElementById('vid-idle');
-            const vReact = document.getElementById('vid-react');
+            // Sett kilder
+            setVidSource('vid-idle', vidSrc.idle);
+            setVidSource('vid-react', vidSrc.react);
+            setVidSource('vid-crit', vidSrc.crit);
+            setVidSource('vid-death', vidSrc.death);
 
-            vIdle.src = idleVideoSrc;
-            vIdle.play(); // Start loopen
-
-            if(reactVideoSrc) {
-                vReact.src = reactVideoSrc;
-            }
+            // Nullstill visning (Fjern alle "show-" klasser)
+            const stage = document.getElementById('stage-area');
+            stage.className = 'stage'; 
+            
+            // Start idle loop
+            document.getElementById('vid-idle').play();
 
             // Lag knapper
             const ctrlDiv = document.getElementById('controls'); ctrlDiv.innerHTML = '';
@@ -200,47 +230,83 @@
             document.getElementById('game-screen').classList.remove('hidden');
         }
 
+        function setVidSource(id, src) {
+            const v = document.getElementById(id);
+            if(src) v.src = src;
+            else v.removeAttribute('src'); 
+        }
+
         function backToMenu() {
-            if(confirm("Gå tilbake til menyen?")) {
+            if(confirm("Gå tilbake?")) {
                 document.getElementById('game-screen').classList.add('hidden');
                 document.getElementById('menu-screen').classList.remove('hidden');
             }
         }
 
-        // --- SKADE LOGIKK ---
+        // --- LOGIKK FOR SKADE OG VIDEOVALG ---
         function takeDamage(amount) {
+            if(isDead) return; // Ingen skade hvis død
+
             currentHp -= amount; if(currentHp < 0) currentHp = 0;
             updateHpBar();
             createDamageNumber(amount);
-            
-            // Start video-reaksjon
-            playReactionVideo();
 
+            // 1. SJEKK OM DØD
             if(currentHp <= 0) {
-                document.getElementById('boss-name').innerText += " (DØD!)";
+                isDead = true;
+                playDeathSequence();
+                return;
+            }
+
+            // 2. SJEKK TYPE SKADE (Kritisk eller Vanlig)
+            if(amount >= 100 && vidSrc.crit) {
+                playOneShot('vid-crit', 'show-crit');
+            } else if(vidSrc.react) {
+                playOneShot('vid-react', 'show-react');
             }
         }
 
-        function playReactionVideo() {
-            // Hvis vi ikke har lastet opp en reaksjonsvideo, gjør ingenting
-            if(!reactVideoSrc) return;
+        function playOneShot(vidId, cssClass) {
+            const stage = document.getElementById('stage-area');
+            const video = document.getElementById(vidId);
+            const idle = document.getElementById('vid-idle');
+
+            // Aktiver riktig video
+            stage.className = 'stage ' + cssClass;
+            
+            video.currentTime = 0;
+            video.play();
+
+            // Når ferdig -> Gå tilbake til Idle
+            video.onended = function() {
+                if(!isDead) { // Bare gå tilbake hvis monsteret ikke døde mens videoen spilte
+                    stage.className = 'stage'; 
+                    idle.play();
+                }
+            };
+        }
+
+        function playDeathSequence() {
+            document.getElementById('boss-name').innerText += " (DØD!)";
+            
+            // Hvis ingen dødsvideo er valgt, frys bare skjermen
+            if(!vidSrc.death) return;
 
             const stage = document.getElementById('stage-area');
-            const vReact = document.getElementById('vid-react');
-            const vIdle = document.getElementById('vid-idle');
+            const deathVid = document.getElementById('vid-death');
+            const idle = document.getElementById('vid-idle');
 
-            // 1. Bytt til reaksjonsmodus (CSS skjuler idle og viser react)
-            stage.classList.add('playing-reaction');
+            // Stopp idle videoen for å spare ressurser/lyd
+            idle.pause();
 
-            // 2. Start videoen fra start
-            vReact.currentTime = 0;
-            vReact.play();
+            // Vis døds-videoen
+            stage.className = 'stage show-death';
+            deathVid.currentTime = 0;
+            deathVid.play();
 
-            // 3. Når videoen er ferdig, bytt tilbake
-            vReact.onended = function() {
-                stage.classList.remove('playing-reaction');
-                vIdle.play(); // Sørg for at idle videoen fortsetter
-            };
+            // VIKTIG: Vi fjerner IKKE klassen når den er ferdig ('onended'). 
+            // Videoen vil stoppe på siste bilde (eller loope hvis den er laget for det),
+            // og den vil bli liggende på toppen fordi z-index er høyest (4).
         }
 
         function updateHpBar() {
