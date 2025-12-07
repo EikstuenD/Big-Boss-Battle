@@ -3,176 +3,93 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Math Boss Battle - Direkte Opplasting</title>
+    <title>Video Boss Battle</title>
     <style>
-        /* --- GRUNNLEGGENDE STIL --- */
-        body {
-            margin: 0; font-family: 'Segoe UI', sans-serif;
-            background-color: #111; color: #fff; height: 100vh;
-            overflow: hidden; display: flex; flex-direction: column; align-items: center;
-        }
+        /* --- GENERELT --- */
+        body { margin: 0; font-family: 'Segoe UI', sans-serif; background-color: #050505; color: #fff; height: 100vh; overflow: hidden; display: flex; flex-direction: column; align-items: center; }
 
-        /* --- SKJERMER --- */
-        .screen { width: 100%; height: 100%; display: none; flex-direction: column; align-items: center; justify-content: center; }
-        .active { display: flex; }
+        /* --- MENY --- */
+        #menu-screen { background: #1a1a1a; overflow-y: auto; padding: 20px; z-index: 100; width: 100%; height: 100%; position: absolute; display: flex; flex-direction: column; align-items: center; }
+        .config-card { background: #2a2a2a; padding: 30px; border-radius: 15px; border: 1px solid #444; width: 90%; max-width: 600px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); margin-top: 20px; }
+        .hidden { display: none !important; }
 
-        /* --- MENY STIL --- */
-        #menu-screen { background: #1a1a1a; overflow-y: auto; padding: 20px; z-index: 100; width: 100%; box-sizing: border-box;}
-        .config-card {
-            background: #2a2a2a; padding: 30px; border-radius: 15px;
-            border: 1px solid #444; width: 90%; max-width: 600px; margin: 0 auto;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-        }
-        
         label { display: block; margin-top: 15px; margin-bottom: 5px; font-weight: bold; color: #ccc; }
         input[type="text"], input[type="number"] { width: 100%; padding: 10px; background: #111; border: 1px solid #555; color: white; border-radius: 5px; box-sizing: border-box; }
         
         /* FIL-OPPLASTING STIL */
-        .file-upload-container {
-            border: 2px dashed #555; padding: 20px; text-align: center;
-            border-radius: 10px; background: #151515; margin-top: 5px;
-        }
-        input[type="file"] { display: none; } /* Skjul den stygge standard-knappen */
-        .custom-file-upload {
-            display: inline-block; padding: 10px 20px; cursor: pointer;
-            background: #3498db; color: white; border-radius: 5px; font-weight: bold;
-        }
-        #file-name-display { display: block; margin-top: 10px; color: #aaa; font-style: italic; }
-        #preview-thumb { max-height: 100px; margin-top: 10px; display: none; border-radius: 5px; }
+        .file-box { border: 2px dashed #444; padding: 15px; background: #151515; border-radius: 8px; text-align: center; margin-bottom: 10px; }
+        .file-label { color: #3498db; cursor: pointer; font-weight: bold; display: block; }
+        .file-status { display: block; margin-top: 5px; font-size: 0.8rem; color: #888; font-style: italic; }
+        input[type="file"] { display: none; }
 
-        /* KNAPPE-OPPSETT I MENY */
+        /* KNAPPER */
         .btn-row { display: flex; gap: 10px; margin-top: 10px; }
         input[type="color"] { width: 50px; padding: 0; border: none; height: 42px; cursor: pointer; }
         
-        .start-btn {
-            background: linear-gradient(45deg, #e67e22, #d35400);
-            color: white; font-size: 1.5rem; font-weight: bold; border: none;
-            padding: 15px; width: 100%; margin-top: 30px; cursor: pointer; border-radius: 8px;
-            text-transform: uppercase; letter-spacing: 1px;
-        }
-        .start-btn:hover { filter: brightness(1.2); }
+        .start-btn { background: linear-gradient(45deg, #e67e22, #d35400); color: white; font-size: 1.5rem; font-weight: bold; border: none; padding: 15px; width: 100%; margin-top: 30px; cursor: pointer; border-radius: 8px; }
+        #back-btn { position: absolute; top: 15px; left: 15px; z-index: 200; background: #444; color: #fff; border: 1px solid #777; padding: 8px 15px; cursor: pointer; border-radius: 5px; font-weight: bold; }
 
-        /* --- SPILL OMRÅDE --- */
-        #game-area { 
-            position: relative; width: 100%; height: 100%; 
-            display: flex; flex-direction: column; align-items: center; justify-content: flex-start; 
-            padding-top: 20px; 
-        }
+        /* --- SPILL --- */
+        #game-screen { width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; padding-top: 20px; }
         #boss-name { font-size: 3rem; margin: 0; text-shadow: 0 0 10px #000; color: #ff5555; }
 
-        /* HELSEBAR */
-        .hp-frame {
-            width: 60%; height: 40px; background: #333;
-            border: 4px solid #000; border-radius: 20px;
-            position: relative; margin: 10px 0 30px 0; overflow: hidden;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.5);
-        }
-        .hp-fill {
-            height: 100%; width: 100%;
-            background: linear-gradient(90deg, #c0392b, #e74c3c);
-            transition: width 0.3s ease-out;
-        }
-        .hp-text {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            display: flex; align-items: center; justify-content: center;
-            font-weight: 900; font-size: 1.2rem; text-shadow: 1px 1px 2px black; z-index: 2;
+        /* HP BAR */
+        .hp-frame { width: 60%; height: 40px; background: #333; border: 4px solid #000; border-radius: 20px; position: relative; margin: 10px 0 20px 0; overflow: hidden; box-shadow: 0 5px 15px rgba(0,0,0,0.5); }
+        .hp-fill { height: 100%; width: 100%; background: linear-gradient(90deg, #c0392b, #e74c3c); transition: width 0.3s ease-out; }
+        .hp-text { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-weight: 900; z-index: 2; text-shadow: 1px 1px 2px black; }
+
+        /* --- VIDEO SCENE --- */
+        .stage { 
+            position: relative; width: 100%; max-width: 800px; flex-grow: 1; 
+            display: flex; justify-content: center; align-items: center; 
+            overflow: hidden; 
         }
 
-        /* --- MONSTER SCENE --- */
-        .stage {
-            position: relative;
-            width: 500px; height: 500px;
-            display: flex; justify-content: center; align-items: center;
+        /* VIKTIG: Begge videoene ligger oppå hverandre */
+        video {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            max-width: 100%; max-height: 100%;
+            width: auto; height: auto;
         }
 
-        #monster-img {
-            max-width: 90%; max-height: 90%;
-            filter: drop-shadow(0 10px 20px rgba(0,0,0,0.5));
-            animation: idleFloat 3s ease-in-out infinite; 
-            transition: filter 0.1s;
-        }
+        #vid-idle { z-index: 1; opacity: 1; }
+        #vid-react { z-index: 2; opacity: 0; pointer-events: none; } /* Skjult som standard */
 
-        /* --- EFFEKTER --- */
-        .shake { animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both !important; }
-        .flash-red { filter: sepia(100%) hue-rotate(-50deg) saturate(600%) contrast(1.2) !important; }
+        /* Klasser for å vise reaksjon */
+        .playing-reaction #vid-idle { opacity: 0; }
+        .playing-reaction #vid-react { opacity: 1; }
 
-        /* ILD */
-        #fire-stream {
-            position: absolute;
-            top: 50%; left: 50%;
-            width: 0px; height: 80px;
-            background: linear-gradient(to right, #ffcc00, #ff4500, #8b0000, transparent);
-            border-radius: 40% 100% 100% 40%;
-            opacity: 0; z-index: 10; pointer-events: none;
-            transition: all 0.3s ease; transform-origin: left center;
-            filter: blur(4px) brightness(1.5);
-            transform: translate(0, -20px) scale(0.5);
-        }
-        .active-fire {
-            width: 300px !important; opacity: 0.9 !important;
-            transform: translate(20px, 0) scale(1.5) !important;
-        }
-
-        /* Skadetall */
-        .damage-text {
-            position: absolute; font-size: 4rem; font-weight: 900; color: #f1c40f;
-            text-shadow: 2px 2px 0 #000; pointer-events: none;
-            animation: floatUp 1s forwards; z-index: 20;
-        }
-        .dead {
-            filter: grayscale(100%) brightness(0.3) blur(2px) !important;
-            animation: none !important;
-            transform: translateY(50px) rotate(10deg);
-            transition: 1s;
-        }
-
-        /* ANIMASJONER */
-        @keyframes idleFloat { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-20px); } }
-        @keyframes shake {
-            10%, 90% { transform: translate3d(-2px, 0, 0); } 20%, 80% { transform: translate3d(4px, 0, 0); }
-            30%, 50%, 70% { transform: translate3d(-8px, 0, 0); } 40%, 60% { transform: translate3d(8px, 0, 0); }
-        }
+        /* --- TEKST EFFEKT --- */
+        .damage-text { position: absolute; font-size: 4rem; font-weight: 900; color: #f1c40f; text-shadow: 2px 2px 0 #000; pointer-events: none; animation: floatUp 1s forwards; z-index: 20; }
         @keyframes floatUp { to { transform: translateY(-150px); opacity: 0; } }
 
-        /* --- KNAPPER --- */
-        #controls {
-            position: fixed; bottom: 0; width: 100%;
-            background: rgba(0,0,0,0.8); border-top: 2px solid #444;
-            padding: 20px; display: flex; justify-content: center; gap: 15px; flex-wrap: wrap;
-        }
-        .atk-btn {
-            padding: 15px 30px; font-size: 1.8rem; font-weight: bold;
-            border: none; border-radius: 10px; color: white; cursor: pointer;
-            box-shadow: 0 5px rgba(0,0,0,0.5); position: relative; top: 0;
-        }
-        .atk-btn:active { top: 5px; box-shadow: none; }
-        
-        #back-btn { 
-            position: absolute; top: 15px; left: 15px; z-index: 200;
-            background: #444; color: #fff; border: 1px solid #777; 
-            padding: 8px 15px; cursor: pointer; border-radius: 5px; font-weight: bold;
-        }
-        #back-btn:hover { background: #666; }
-
+        /* --- CONTROLS --- */
+        #controls { position: fixed; bottom: 0; width: 100%; background: rgba(0,0,0,0.9); border-top: 1px solid #444; padding: 20px; display: flex; justify-content: center; gap: 15px; flex-wrap: wrap; z-index: 10; }
+        .atk-btn { padding: 15px 30px; font-size: 1.8rem; font-weight: bold; border: none; border-radius: 10px; color: white; cursor: pointer; box-shadow: 0 5px rgba(0,0,0,0.5); }
+        .atk-btn:active { transform: translateY(4px); box-shadow: none; }
     </style>
 </head>
 <body>
 
-    <div id="menu-screen" class="screen active">
+    <div id="menu-screen">
         <div class="config-card">
-            <h2 style="margin-top:0;">🔥 Boss Battle Oppsett</h2>
+            <h2 style="margin-top:0;">🎥 Video Boss Setup</h2>
             
-            <label>Navn på Monster:</label>
-            <input type="text" id="inp-name" value="Monsteret">
+            <label>Boss Navn:</label>
+            <input type="text" id="inp-name" value="Video Monsteret">
 
-            <label>Last opp Monsterbilde:</label>
-            <div class="file-upload-container">
-                <label for="file-upload" class="custom-file-upload">
-                    📁 Klikk her for å velge bilde
-                </label>
-                <input id="file-upload" type="file" accept="image/*" onchange="handleImageUpload(this)"/>
-                <span id="file-name-display">Ingen fil valgt (bruker standard drage)</span>
-                <img id="preview-thumb" src="" alt="Forhåndsvisning">
+            <label>Video 1: Loop (Vanlig tilstand)</label>
+            <div class="file-box">
+                <label for="upload-idle" class="file-label">📁 Velg Loop-video</label>
+                <input id="upload-idle" type="file" accept="video/*" onchange="handleVideoUpload(this, 'status-idle')">
+                <span id="status-idle" class="file-status">Ingen video valgt</span>
+            </div>
+
+            <label>Video 2: Reaksjon (Når den tar skade)</label>
+            <div class="file-box">
+                <label for="upload-react" class="file-label">📁 Velg Skade-video</label>
+                <input id="upload-react" type="file" accept="video/*" onchange="handleVideoUpload(this, 'status-react')">
+                <span id="status-react" class="file-status">Ingen video valgt</span>
             </div>
 
             <label>Maks HP:</label>
@@ -181,57 +98,54 @@
             <label>Antall knapper:</label>
             <input type="number" id="inp-count" value="3" min="1" max="6" onchange="createBtnInputs()">
 
-            <div id="btn-config" style="margin-top: 15px;"></div>
+            <div id="btn-config"></div>
 
-            <button class="start-btn" onclick="startGame()">Start Kampen</button>
+            <button class="start-btn" onclick="startGame()">Start Spillet</button>
         </div>
     </div>
 
-    <div id="game-screen" class="screen">
-        <button id="back-btn" onclick="backToMenu()">← Tilbake til Meny</button>
+    <div id="game-screen" class="hidden">
+        <button id="back-btn" onclick="backToMenu()">← Meny</button>
         
-        <div id="game-area">
+        <div id="game-screen-content" style="width:100%; height:100%; display:flex; flex-direction:column; align-items:center;">
             <h1 id="boss-name">Boss</h1>
             <div class="hp-frame">
                 <div class="hp-text" id="hp-text">100 / 100</div>
                 <div class="hp-fill" id="hp-fill"></div>
             </div>
-            <div class="stage">
-                <img id="monster-img" src="" alt="Monster">
-                <div id="fire-stream"></div>
+
+            <div class="stage" id="stage-area">
+                <video id="vid-idle" loop muted playsinline></video>
+                
+                <video id="vid-react" muted playsinline></video>
             </div>
         </div>
+
         <div id="controls"></div>
     </div>
 
     <script>
-        let currentHp = 0; let maxHp = 0; let isDead = false;
-        
-        // Standard bilde (hvis man ikke laster opp noe)
-        let loadedImageSrc = "https://cdn-icons-png.flaticon.com/512/3069/3069172.png";
-        
+        // State
+        let currentHp = 0; let maxHp = 0;
+        let idleVideoSrc = null;
+        let reactVideoSrc = null;
         const defaultCols = ['#27ae60', '#2980b9', '#8e44ad', '#f39c12', '#d35400', '#c0392b'];
 
         window.onload = createBtnInputs;
 
-        // --- HÅNDTER BILDEOPPLASTING ---
-        function handleImageUpload(input) {
+        // --- FIL HÅNDTERING ---
+        function handleVideoUpload(input, statusId) {
             if (input.files && input.files[0]) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    // Lagre bildet i en variabel
-                    loadedImageSrc = e.target.result;
-                    
-                    // Vis forhåndsvisning
-                    document.getElementById('file-name-display').innerText = input.files[0].name;
-                    const thumb = document.getElementById('preview-thumb');
-                    thumb.src = e.target.result;
-                    thumb.style.display = "inline-block";
-                }
-                reader.readAsDataURL(input.files[0]);
+                const file = input.files[0];
+                const url = URL.createObjectURL(file); // Lager en midlertidig lenke til filen
+                document.getElementById(statusId).innerText = "Valgt: " + file.name;
+                
+                if(statusId === 'status-idle') idleVideoSrc = url;
+                if(statusId === 'status-react') reactVideoSrc = url;
             }
         }
 
+        // --- KNAPPE GENERERING ---
         function createBtnInputs() {
             const count = document.getElementById('inp-count').value;
             const container = document.getElementById('btn-config');
@@ -246,20 +160,27 @@
             }
         }
 
+        // --- START SPILL ---
         function startGame() {
-            // Hent verdier
+            if(!idleVideoSrc) { alert("Du må velge en Loop-video!"); return; }
+
             const name = document.getElementById('inp-name').value;
             maxHp = parseInt(document.getElementById('inp-hp').value);
-            currentHp = maxHp; isDead = false;
+            currentHp = maxHp;
 
-            // Sett opp spillskjerm
             document.getElementById('boss-name').innerText = name;
-            
-            // BRUK DET OPPLASTEDE BILDET
-            document.getElementById('monster-img').src = loadedImageSrc;
-            document.getElementById('monster-img').classList.remove('dead');
-            
             updateHpBar();
+
+            // Sett opp videoene
+            const vIdle = document.getElementById('vid-idle');
+            const vReact = document.getElementById('vid-react');
+
+            vIdle.src = idleVideoSrc;
+            vIdle.play(); // Start loopen
+
+            if(reactVideoSrc) {
+                vReact.src = reactVideoSrc;
+            }
 
             // Lag knapper
             const ctrlDiv = document.getElementById('controls'); ctrlDiv.innerHTML = '';
@@ -270,32 +191,56 @@
                 const btn = document.createElement('button'); btn.className = 'atk-btn';
                 btn.innerText = `-${val}`; btn.style.backgroundColor = col;
                 if(col === '#f39c12' || col === '#2ecc71') btn.style.color = '#000';
+                
                 btn.onclick = () => takeDamage(parseInt(val));
                 ctrlDiv.appendChild(btn);
             }
-            
-            // Bytt skjerm uten å laste på nytt
-            document.getElementById('menu-screen').classList.remove('active');
-            document.getElementById('game-screen').classList.add('active');
+
+            document.getElementById('menu-screen').classList.add('hidden');
+            document.getElementById('game-screen').classList.remove('hidden');
         }
 
-        // --- FUNKSJON FOR Å GÅ TILBAKE UTEN Å SLETTE ALT ---
         function backToMenu() {
-            if(confirm("Gå tilbake til menyen? (Kampen nullstilles, men bildet huskes)")) {
-                document.getElementById('game-screen').classList.remove('active');
-                document.getElementById('menu-screen').classList.add('active');
+            if(confirm("Gå tilbake til menyen?")) {
+                document.getElementById('game-screen').classList.add('hidden');
+                document.getElementById('menu-screen').classList.remove('hidden');
             }
         }
 
+        // --- SKADE LOGIKK ---
         function takeDamage(amount) {
-            if(isDead) return;
             currentHp -= amount; if(currentHp < 0) currentHp = 0;
             updateHpBar();
             createDamageNumber(amount);
-            triggerHitEffect();
-            // SPYT ILD HVIS SKADE >= 100
-            if(amount >= 100) { triggerFireBreath(); }
-            if(currentHp <= 0) { isDead = true; defeatMonster(); }
+            
+            // Start video-reaksjon
+            playReactionVideo();
+
+            if(currentHp <= 0) {
+                document.getElementById('boss-name').innerText += " (DØD!)";
+            }
+        }
+
+        function playReactionVideo() {
+            // Hvis vi ikke har lastet opp en reaksjonsvideo, gjør ingenting
+            if(!reactVideoSrc) return;
+
+            const stage = document.getElementById('stage-area');
+            const vReact = document.getElementById('vid-react');
+            const vIdle = document.getElementById('vid-idle');
+
+            // 1. Bytt til reaksjonsmodus (CSS skjuler idle og viser react)
+            stage.classList.add('playing-reaction');
+
+            // 2. Start videoen fra start
+            vReact.currentTime = 0;
+            vReact.play();
+
+            // 3. Når videoen er ferdig, bytt tilbake
+            vReact.onended = function() {
+                stage.classList.remove('playing-reaction');
+                vIdle.play(); // Sørg for at idle videoen fortsetter
+            };
         }
 
         function updateHpBar() {
@@ -304,32 +249,13 @@
             document.getElementById('hp-text').innerText = `${currentHp} / ${maxHp}`;
         }
 
-        function triggerHitEffect() {
-            const img = document.getElementById('monster-img');
-            img.classList.remove('shake', 'flash-red'); void img.offsetWidth;
-            img.classList.add('shake'); img.classList.add('flash-red');
-            setTimeout(() => { img.classList.remove('shake', 'flash-red'); }, 500);
-        }
-
-        function triggerFireBreath() {
-            const fire = document.getElementById('fire-stream');
-            fire.classList.add('active-fire');
-            setTimeout(() => { fire.classList.remove('active-fire'); }, 1000);
-        }
-
         function createDamageNumber(amount) {
             const txt = document.createElement('div'); txt.innerText = `-${amount}`;
             txt.className = 'damage-text';
             const rndX = Math.floor(Math.random() * 100) - 50;
-            txt.style.left = `calc(50% + ${rndX}px)`; txt.style.top = '20%';
+            txt.style.left = `calc(50% + ${rndX}px)`; txt.style.top = '30%';
             document.querySelector('.stage').appendChild(txt);
             setTimeout(() => txt.remove(), 1000);
-        }
-
-        function defeatMonster() {
-            document.getElementById('monster-img').classList.add('dead');
-            document.getElementById('boss-name').innerText += " (BESEIRET!)";
-            document.getElementById('boss-name').style.color = "#555";
         }
     </script>
 </body>
