@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Math Boss Battle - Fixed</title>
+    <title>Math Boss Battle - Robust</title>
     <style>
         /* --- General Styles --- */
         :root {
@@ -114,7 +114,8 @@
             background: radial-gradient(ellipse at bottom, rgba(0,0,0,0.8) 0%, transparent 70%);
         }
 
-        #monster-img {
+        /* Både bilde og emoji bruker samme animasjon */
+        .boss-visual {
             max-height: 90%; 
             width: auto;
             filter: drop-shadow(0 10px 20px rgba(0,0,0,0.5));
@@ -122,10 +123,16 @@
             transition: filter 0.2s; 
         }
 
+        #backup-emoji {
+            font-size: 200px;
+            display: none; /* Skjult med mindre bildet feiler */
+            cursor: default;
+        }
+
         /* Idle Animation Keyframes */
         @keyframes idleFloat {
             0%, 100% { transform: translateY(0px) scale(1); }
-            50% { transform: translateY(-20px) scale(1.02); } 
+            50% { transform: translateY(-20px) scale(1.05); } /* Puster */
         }
 
         /* --- REACTION ANIMATIONS (When Hit) --- */
@@ -151,8 +158,9 @@
         .dead {
             filter: grayscale(100%) brightness(0.4) sepia(30%) !important; 
             animation: none !important; 
-            transform: translateY(30px) scale(0.9); 
+            transform: translateY(50px) scale(0.8) rotate(10deg); 
             transition: 1s all ease-out;
+            opacity: 0.6;
         }
 
         /* Floating Damage Numbers */
@@ -183,6 +191,7 @@
             text-shadow: 1px 1px 2px rgba(0,0,0,0.5); position: relative; top: 0;
         }
         .action-btn:active { top: 6px; box-shadow: 0 2px rgba(0,0,0,0.3); }
+        
         #reset-btn {
             position: absolute; top: 20px; left: 20px; background: #444;
             color: #ccc; border: none; padding: 8px 15px; cursor: pointer; border-radius: 5px; z-index: 100;
@@ -198,9 +207,10 @@
             <hr style="border-color: #444; margin-bottom: 25px; opacity: 0.5;">
 
             <div class="form-group">
-                <label for="monster-select">Velg Monster (Animerte):</label>
+                <label for="monster-select">Velg Monster:</label>
                 <select id="monster-select" onchange="previewMonsterName()">
                     </select>
+                <small style="color:#777; margin-top:5px; display:block;">(Hvis bildet feiler, vises en Emoji automatisk)</small>
             </div>
 
             <div class="form-group" style="display: flex; gap: 10px;">
@@ -239,7 +249,8 @@
             </div>
 
             <div class="monster-stage">
-                <img id="monster-img" src="" alt="Monster Animated">
+                <img id="monster-img" class="boss-visual" src="" alt="Monster" onerror="imageLoadError()">
+                <div id="backup-emoji" class="boss-visual"></div>
             </div>
         </div>
 
@@ -249,12 +260,38 @@
 
     <script>
         // --- DATA ---
+        // Liste med stabile bilder + en backup emoji for sikkerhets skyld.
         const monsters = [
-            { name: "Den Røde Dragen", url: "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExajZ4bnZ5a3Z6a3Z4bnZ5a3Z6a3Z4bnZ5a3Z6a3Z4bnZ5a3Z6aSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9cw/14bOa08X7G5T7G/giphy.gif", defaultHp: 2500 },
-            { name: "Mørkets Trollmann", url: "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExa3Z4bnZ5a3Z6a3Z4bnZ5a3Z6a3Z4bnZ5a3Z6a3Z4bnZ5a3Z6aSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9cw/l0HlFW9YjX3j9gX1S/giphy.gif", defaultHp: 1500 },
-            { name: "Sumptrollet", url: "https://media0.giphy.com/media/BHNpk90P7T8nS/giphy.gif?cid=ecf05e47b9u4u6u6u6u6u6u6u6u6u6u6u6u6u6u6&rid=giphy.gif", defaultHp: 3000 },
-            { name: "Skjelettkrigeren", url: "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExa3Z4bnZ5a3Z6a3Z4bnZ5a3Z6a3Z4bnZ5a3Z6a3Z4bnZ5a3Z6aSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9cw/3o7TKSjRrfIPjeiVyM/giphy.gif", defaultHp: 1000 },
-            { name: "Beholder (Øyet)", url: "https://media3.giphy.com/media/KqC7vU1v6lGyk/giphy.gif?cid=ecf05e47b9u4u6u6u6u6u6u6u6u6u6u6u6u6u6u6&rid=giphy.gif", defaultHp: 2000 }
+            { 
+                name: "Dragen", 
+                url: "https://cdn-icons-png.flaticon.com/512/1205/1205511.png", 
+                emoji: "🐉",
+                defaultHp: 2500 
+            },
+            { 
+                name: "Trollet", 
+                url: "https://cdn-icons-png.flaticon.com/512/3063/3063167.png", 
+                emoji: "👹",
+                defaultHp: 3000 
+            },
+            { 
+                name: "Kraken", 
+                url: "https://cdn-icons-png.flaticon.com/512/1998/1998610.png", 
+                emoji: "🐙",
+                defaultHp: 2000 
+            },
+            { 
+                name: "Cyclops", 
+                url: "https://cdn-icons-png.flaticon.com/512/3063/3063155.png", 
+                emoji: "👁️",
+                defaultHp: 1500 
+            },
+            { 
+                name: "Spøkelsesridder", 
+                url: "https://cdn-icons-png.flaticon.com/512/3063/3063068.png", 
+                emoji: "👻",
+                defaultHp: 1000 
+            }
         ];
 
         const defaultColors = ["#2ecc71", "#3498db", "#9b59b6", "#f1c40f", "#e67e22", "#e74c3c"];
@@ -262,6 +299,7 @@
         let currentHp = 0;
         let maxHp = 0;
         let gameActive = false;
+        let currentMonsterIndex = 0;
 
         window.onload = function() {
             populateMonsterSelect();
@@ -272,7 +310,7 @@
             const select = document.getElementById('monster-select');
             monsters.forEach((m, index) => {
                 const opt = document.createElement('option');
-                opt.value = index; opt.innerText = m.name;
+                opt.value = index; opt.innerText = `${m.emoji} ${m.name}`;
                 select.appendChild(opt);
             });
             previewMonsterName();
@@ -284,13 +322,10 @@
             document.getElementById('hp-input').value = monsters[index].defaultHp;
         }
 
-        // --- FIXED FUNCTION ---
         function generateButtonConfig() {
             let count = parseInt(document.getElementById('btn-count-input').value);
             if(isNaN(count) || count < 1) count = 1; 
             if(count > 6) count = 6;
-            
-            // Update input back to valid number
             document.getElementById('btn-count-input').value = count;
 
             const container = document.getElementById('button-config-area');
@@ -305,41 +340,51 @@
                 label.style.fontWeight = "bold"; 
                 label.style.width = "30px";
 
-                // Value Input
                 const valInput = document.createElement('input');
-                valInput.type = "number"; 
-                valInput.placeholder = "Skade";
-                valInput.value = (i + 1) * 25; 
-                valInput.id = `btn-val-${i}`;
+                valInput.type = "number"; valInput.placeholder = "Skade";
+                valInput.value = (i + 1) * 25; valInput.id = `btn-val-${i}`;
 
-                // Color Input
                 const colInput = document.createElement('input');
-                colInput.type = "color"; 
-                colInput.value = defaultColors[i % defaultColors.length]; 
+                colInput.type = "color"; colInput.value = defaultColors[i % defaultColors.length]; 
                 colInput.id = `btn-col-${i}`;
 
-                row.appendChild(label); 
-                row.appendChild(valInput); 
-                row.appendChild(colInput);
+                row.appendChild(label); row.appendChild(valInput); row.appendChild(colInput);
                 container.appendChild(row);
             }
         }
 
+        // --- ERROR HANDLING FOR IMAGES ---
+        function imageLoadError() {
+            // Skjul bildet, vis emoji i stedet
+            document.getElementById('monster-img').style.display = 'none';
+            const emojiDiv = document.getElementById('backup-emoji');
+            emojiDiv.style.display = 'block';
+            emojiDiv.innerText = monsters[currentMonsterIndex].emoji;
+        }
+
         function startGame() {
-            // Read values
-            const monsterIndex = document.getElementById('monster-select').value;
-            maxHp = parseInt(document.getElementById('hp-input').value);
+            const index = document.getElementById('monster-select').value;
+            currentMonsterIndex = index; // Lagre index for backup-funksjonen
             
+            maxHp = parseInt(document.getElementById('hp-input').value);
             if(isNaN(maxHp)) maxHp = 1000;
             currentHp = maxHp; 
             gameActive = true;
 
-            // Update UI
+            // Update UI Name
             document.getElementById('boss-name-display').innerText = document.getElementById('boss-name-input').value;
-            const img = document.getElementById('monster-img');
-            img.src = monsters[monsterIndex].url;
-            img.classList.remove('dead');
             
+            // Setup Visuals (Reset both image and emoji)
+            const img = document.getElementById('monster-img');
+            const emojiDiv = document.getElementById('backup-emoji');
+            
+            img.src = monsters[index].url;
+            img.classList.remove('dead', 'is-hit');
+            img.style.display = 'block'; // Prøv å vise bilde først
+            
+            emojiDiv.style.display = 'none'; // Skjul emoji
+            emojiDiv.classList.remove('dead', 'is-hit');
+
             updateHealthBar();
 
             // Generate Buttons
@@ -348,28 +393,22 @@
             const btnCount = parseInt(document.getElementById('btn-count-input').value);
             
             for(let i=0; i<btnCount; i++) {
-                // IMPORTANT: These IDs must match what was created in generateButtonConfig
                 const valInput = document.getElementById(`btn-val-${i}`);
                 const colInput = document.getElementById(`btn-col-${i}`);
                 
                 if(valInput && colInput) {
                     const val = valInput.value;
                     const col = colInput.value;
-                    
                     const btn = document.createElement('button');
                     btn.className = 'action-btn'; 
                     btn.innerText = `-${val}`;
                     btn.style.backgroundColor = col;
-                    
-                    // Dark text for bright colors
                     if(col === "#f1c40f" || col === "#2ecc71") btn.style.color = "#000";
-
                     btn.onclick = () => takeDamage(parseInt(val));
                     controlArea.appendChild(btn);
                 }
             }
 
-            // Switch Screen
             document.getElementById('menu-screen').classList.remove('active');
             document.getElementById('game-screen').classList.add('active');
         }
@@ -395,15 +434,18 @@
         }
 
         function triggerDamageVisuals(amount) {
+            // Vi må finne ut hva som vises nå (bilde eller emoji) og animere det
             const img = document.getElementById('monster-img');
+            const emoji = document.getElementById('backup-emoji');
+            const activeElement = (img.style.display !== 'none') ? img : emoji;
             const stage = document.querySelector('.monster-stage');
 
-            // Reset animation trick
-            img.classList.remove('is-hit');
-            void img.offsetWidth; 
-            img.classList.add('is-hit');
+            // Reset animation
+            activeElement.classList.remove('is-hit');
+            void activeElement.offsetWidth; 
+            activeElement.classList.add('is-hit');
 
-            setTimeout(() => { img.classList.remove('is-hit'); }, 500);
+            setTimeout(() => { activeElement.classList.remove('is-hit'); }, 500);
 
             // Floating Text
             const floatText = document.createElement('div');
@@ -416,7 +458,12 @@
 
         function defeatMonster() {
             const img = document.getElementById('monster-img');
+            const emoji = document.getElementById('backup-emoji');
+            
+            // Drepe begge for sikkerhets skyld, så det synlige dør
             img.classList.add('dead'); 
+            emoji.classList.add('dead');
+            
             document.getElementById('boss-name-display').innerText += " (BESEIRET!)";
         }
 
