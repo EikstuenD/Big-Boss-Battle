@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ultimate Video Boss - Med Lyd</title>
+    <title>Ultimate Video Boss - Stor Skjerm</title>
     <style>
         /* --- GENERELT --- */
         body { margin: 0; font-family: 'Segoe UI', sans-serif; background-color: #050505; color: #fff; height: 100vh; overflow: hidden; display: flex; flex-direction: column; align-items: center; }
@@ -22,34 +22,58 @@
         .file-status { font-size: 0.8rem; color: #888; font-style: italic; margin-right: 10px;}
         input[type="file"] { display: none; }
 
-        /* KNAPPER */
+        /* KNAPPER I MENY */
         .btn-row { display: flex; gap: 10px; margin-top: 10px; }
         input[type="color"] { width: 50px; padding: 0; border: none; height: 42px; cursor: pointer; }
         
         .start-btn { background: linear-gradient(45deg, #27ae60, #2ecc71); color: white; font-size: 1.5rem; font-weight: bold; border: none; padding: 15px; width: 100%; margin-top: 30px; cursor: pointer; border-radius: 8px; }
         #back-btn { position: absolute; top: 15px; left: 15px; z-index: 200; background: #444; color: #fff; border: 1px solid #777; padding: 8px 15px; cursor: pointer; border-radius: 5px; font-weight: bold; }
 
-        /* --- SPILL --- */
-        #game-screen { width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; padding-top: 20px; }
-        #boss-name { font-size: 3rem; margin: 0; text-shadow: 0 0 10px #000; color: #ff5555; }
+        /* --- SPILL SCREEN LAYOUT (Viktig endring her) --- */
+        #game-screen { 
+            width: 100%; height: 100%; 
+            display: flex; flex-direction: column; /* Stable ting vertikalt */
+            overflow: hidden;
+        }
+
+        /* Innholdet over knappene (Tittel, HP, Video) */
+        #game-screen-content {
+            flex-grow: 1; /* Ta all tilgjengelig plass */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            overflow: hidden; /* Hindre at video stikker utenfor */
+            padding-top: 20px;
+            padding-bottom: 10px;
+            position: relative;
+        }
+
+        #boss-name { font-size: 3rem; margin: 0; text-shadow: 0 0 10px #000; color: #ff5555; z-index: 10; }
 
         /* HP BAR */
-        .hp-frame { width: 60%; height: 40px; background: #333; border: 4px solid #000; border-radius: 20px; position: relative; margin: 10px 0 20px 0; overflow: hidden; box-shadow: 0 5px 15px rgba(0,0,0,0.5); }
+        .hp-frame { width: 60%; height: 40px; background: #333; border: 4px solid #000; border-radius: 20px; position: relative; margin: 10px 0 20px 0; overflow: hidden; box-shadow: 0 5px 15px rgba(0,0,0,0.5); z-index: 10; flex-shrink: 0; }
         .hp-fill { height: 100%; width: 100%; background: linear-gradient(90deg, #c0392b, #e74c3c); transition: width 0.3s ease-out; }
         .hp-text { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-weight: 900; z-index: 2; text-shadow: 1px 1px 2px black; }
 
-        /* --- VIDEO SCENE --- */
+        /* --- VIDEO SCENE (Større og bedre tilpasset) --- */
         .stage { 
-            position: relative; width: 100%; max-width: 800px; flex-grow: 1; 
+            position: relative; 
+            width: 98%;             /* Bruk nesten hele bredden */
+            max-width: 1600px;      /* Mye større maksbredde enn før */
+            height: 100%;           /* Prøv å fylle høyden i beholderen */
             display: flex; justify-content: center; align-items: center; 
-            overflow: hidden; 
+            overflow: hidden;
         }
 
         /* LAGOPSYSTEM FOR VIDEOER */
         video {
-            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            max-width: 100%; max-height: 100%;
-            width: auto; height: auto;
+            position: absolute; 
+            top: 50%; left: 50%; transform: translate(-50%, -50%);
+            /* De nye reglene for å gjøre videoen størst mulig uten å kutte: */
+            width: 100%;
+            height: 100%;
+            object-fit: contain; /* Dette er nøkkelen! */
             transition: opacity 0.2s;
         }
 
@@ -62,10 +86,8 @@
         /* Klasser som aktiveres av JS */
         .show-react #vid-idle { opacity: 0; }
         .show-react #vid-react { opacity: 1; }
-
         .show-crit #vid-idle { opacity: 0; }
         .show-crit #vid-crit { opacity: 1; }
-
         .show-death #vid-idle { opacity: 0; }
         .show-death #vid-death { opacity: 1; }
 
@@ -73,8 +95,16 @@
         .damage-text { position: absolute; font-size: 4rem; font-weight: 900; color: #f1c40f; text-shadow: 2px 2px 0 #000; pointer-events: none; animation: floatUp 1s forwards; z-index: 20; }
         @keyframes floatUp { to { transform: translateY(-150px); opacity: 0; } }
 
-        /* --- CONTROLS --- */
-        #controls { position: fixed; bottom: 0; width: 100%; background: rgba(0,0,0,0.9); border-top: 1px solid #444; padding: 20px; display: flex; justify-content: center; gap: 15px; flex-wrap: wrap; z-index: 10; }
+        /* --- CONTROLS (Ikke lenger fixed position) --- */
+        #controls { 
+            width: 100%; 
+            background: rgba(0,0,0,0.95); 
+            border-top: 1px solid #444; 
+            padding: 20px; 
+            display: flex; justify-content: center; gap: 15px; flex-wrap: wrap; 
+            z-index: 10;
+            flex-shrink: 0; /* Sikrer at denne baren ikke krymper */
+        }
         .atk-btn { padding: 15px 30px; font-size: 1.8rem; font-weight: bold; border: none; border-radius: 10px; color: white; cursor: pointer; box-shadow: 0 5px rgba(0,0,0,0.5); }
         .atk-btn:active { transform: translateY(4px); box-shadow: none; }
     </style>
@@ -83,11 +113,11 @@
 
     <div id="menu-screen">
         <div class="config-card">
-            <h2 style="margin-top:0;">🔊 Big Boss Battle (Med Lyd)</h2>
+            <h2 style="margin-top:0;">🔊 Video Boss (Stor Skjerm)</h2>
             <p style="font-size: 0.9rem; color: #888; margin-top:-10px;">NB: Husk å sett en knapp til 100+ skade for å se Video 3.</p>
             
             <label>Boss Navn:</label>
-            <input type="text" id="inp-name" value="Sumpflammern">
+            <input type="text" id="inp-name" value="Megabossen">
 
             <label>1. Loop (Idle - Går hele tiden):</label>
             <div class="file-box">
@@ -132,7 +162,7 @@
     <div id="game-screen" class="hidden">
         <button id="back-btn" onclick="backToMenu()">← Meny</button>
         
-        <div id="game-screen-content" style="width:100%; height:100%; display:flex; flex-direction:column; align-items:center;">
+        <div id="game-screen-content">
             <h1 id="boss-name">Boss</h1>
             <div class="hp-frame">
                 <div class="hp-text" id="hp-text">100 / 100</div>
@@ -271,15 +301,12 @@
             }
 
             // 2. SJEKK TYPE SKADE
-            // Hvis skaden er >= 100 OG vi har kritisk video -> Spill Video 3
             if(amount >= 100 && vidSrc.crit) {
                 playOneShot('vid-crit', 'show-crit');
             } 
-            // Ellers spill Video 2 (React)
             else if(vidSrc.react) {
                 playOneShot('vid-react', 'show-react');
             }
-            // Hvis vi burde spilt Video 3 men mangler den, spill Video 2 som backup
             else if(amount >= 100 && !vidSrc.crit && vidSrc.react) {
                 playOneShot('vid-react', 'show-react');
             }
@@ -290,36 +317,30 @@
             const video = document.getElementById(vidId);
             const idle = document.getElementById('vid-idle');
 
-            // Aktiver riktig video
             stage.className = 'stage ' + cssClass;
-            
-            // Stopp idle midlertidig (for å unngå dobbel lyd)
             idle.pause();
 
             video.currentTime = 0;
             video.volume = 1.0;
             video.play();
 
-            // Når ferdig -> Gå tilbake til Idle
             video.onended = function() {
                 if(!isDead) {
                     stage.className = 'stage'; 
-                    idle.play(); // Start idle igjen (med lyd)
+                    idle.play();
                 }
             };
         }
 
         function playDeathSequence() {
             document.getElementById('boss-name').innerText += " (DØD!)";
-            
             if(!vidSrc.death) return;
 
             const stage = document.getElementById('stage-area');
             const deathVid = document.getElementById('vid-death');
             const idle = document.getElementById('vid-idle');
 
-            idle.pause(); // Stopp idle lyd
-
+            idle.pause();
             stage.className = 'stage show-death';
             deathVid.currentTime = 0;
             deathVid.volume = 1.0;
