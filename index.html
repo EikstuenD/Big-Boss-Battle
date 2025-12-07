@@ -1,319 +1,367 @@
 <!DOCTYPE html>
 <html lang="no">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Stort Monster med Klubbe</title>
-<style>
-    /* --- Oppsett av scenen --- */
-    body {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        background-color: #222; /* Mørkere bakgrunn */
-        color: white;
-        font-family: sans-serif;
-        min-height: 100vh;
-        margin: 0;
-        overflow: hidden; /* Hindrer scrollbars når monsteret rister */
-    }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Math Boss Battle - Fire Edition</title>
+    <style>
+        /* --- GRUNNLEGGENDE STIL --- */
+        body {
+            margin: 0;
+            font-family: 'Segoe UI', sans-serif;
+            background-color: #111;
+            color: #fff;
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
 
-    .stage {
-        position: relative;
-        /* MYE større scene for å få plass til det store monsteret */
-        width: 90%; 
-        max-width: 800px;
-        height: 600px;
-        background: linear-gradient(to bottom, #333, #1a1a1a); /* Litt mer spennende gulv */
-        border-radius: 10px;
-        margin-bottom: 20px;
-        border-bottom: 10px solid #111;
-        overflow: hidden;
-    }
+        /* --- SKJERMER (MENY VS SPILL) --- */
+        .screen { width: 100%; height: 100%; display: none; flex-direction: column; align-items: center; justify-content: center; }
+        .active { display: flex; }
 
-    /* --- Monsterets KROPP --- */
-    #monster {
-        position: absolute;
-        bottom: 80px; /* Justert opp fra bunnen */
-        left: 50%; /* Sentrert horisontalt */
-        margin-left: -50px; /* Justering for sentrering */
-        width: 100px;
-        height: 130px;
-        /* "Skjell"-tekstur laget med gradienter */
-        background-color: #556b2f; /* Mørkere olivengrønn */
-        background-image: 
-            radial-gradient(circle at 50% 50%, rgba(0,0,0,0.2) 20%, transparent 30%),
-            radial-gradient(circle at 50% 50%, rgba(0,0,0,0.1) 20%, transparent 30%);
-        background-size: 20px 20px, 15px 15px;
-        background-position: 0 0, 10px 10px;
+        /* --- MENY STIL --- */
+        #menu-screen { background: #1a1a1a; overflow-y: auto; padding: 20px; }
+        .config-card {
+            background: #2a2a2a; padding: 30px; border-radius: 15px;
+            border: 1px solid #444; width: 90%; max-width: 500px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+        label { display: block; margin-top: 15px; margin-bottom: 5px; font-weight: bold; color: #ccc; }
+        input { width: 100%; padding: 10px; background: #111; border: 1px solid #555; color: white; border-radius: 5px; box-sizing: border-box; }
+        .btn-row { display: flex; gap: 10px; margin-top: 10px; }
+        input[type="color"] { width: 50px; padding: 0; border: none; height: 42px; cursor: pointer; }
         
-        border-radius: 30px 30px 10px 10px;
-        transition: all 0.3s ease;
+        .start-btn {
+            background: linear-gradient(45deg, #e67e22, #d35400);
+            color: white; font-size: 1.5rem; font-weight: bold; border: none;
+            padding: 15px; width: 100%; margin-top: 30px; cursor: pointer; border-radius: 8px;
+            text-transform: uppercase; letter-spacing: 1px;
+        }
+        .start-btn:hover { filter: brightness(1.2); }
+
+        /* --- SPILL OMRÅDE --- */
+        #game-area { 
+            position: relative; width: 100%; height: 100%; 
+            display: flex; flex-direction: column; align-items: center; justify-content: flex-start; 
+            padding-top: 20px; 
+        }
+
+        #boss-name { font-size: 3rem; margin: 0; text-shadow: 0 0 10px #000; color: #ff5555; }
+
+        /* HELSEBAR */
+        .hp-frame {
+            width: 60%; height: 40px; background: #333;
+            border: 4px solid #000; border-radius: 20px;
+            position: relative; margin: 10px 0 30px 0; overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+        }
+        .hp-fill {
+            height: 100%; width: 100%;
+            background: linear-gradient(90deg, #c0392b, #e74c3c);
+            transition: width 0.3s ease-out;
+        }
+        .hp-text {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 900; font-size: 1.2rem; text-shadow: 1px 1px 2px black; z-index: 2;
+        }
+
+        /* --- MONSTER SCENE & BILDE --- */
+        .stage {
+            position: relative;
+            width: 500px; height: 500px;
+            display: flex; justify-content: center; align-items: center;
+        }
+
+        #monster-img {
+            max-width: 100%; max-height: 100%;
+            filter: drop-shadow(0 10px 20px rgba(0,0,0,0.5));
+            /* Rolig sveving (idle) */
+            animation: idleFloat 3s ease-in-out infinite; 
+            transition: filter 0.1s;
+        }
+
+        /* --- EFFEKTER --- */
         
-        /* HER GJØR VI DET STORT! Skalerer opp 4x */
-        transform: scale(4); 
-        transform-origin: bottom center; /* Vokser fra bunnen og opp */
+        /* 1. Rist ved skade */
+        .shake { animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both !important; }
+        
+        /* 2. Blink rødt ved skade */
+        .flash-red { filter: sepia(100%) hue-rotate(-50deg) saturate(600%) contrast(1.2) !important; }
 
-        animation: breathing 3s infinite ease-in-out;
-        z-index: 2;
-    }
+        /* 3. ILD (CSS-generert) */
+        #fire-stream {
+            position: absolute;
+            top: 50%; left: 50%; /* Starter midt i bildet */
+            width: 0px; height: 80px;
+            background: linear-gradient(to right, #ffcc00, #ff4500, #8b0000, transparent);
+            border-radius: 40% 100% 100% 40%;
+            opacity: 0;
+            z-index: 10;
+            pointer-events: none;
+            transition: all 0.3s ease;
+            transform-origin: left center;
+            filter: blur(4px) brightness(1.5);
+            transform: translate(0, -20px) scale(0.5); /* Juster startposisjon */
+        }
 
-    /* --- PIGGER --- */
-    .spikes-container {
-        position: absolute;
-        top: -20px;
-        left: 5px;
-        display: flex;
-        gap: 5px;
-    }
-    .spike {
-        /* CSS-triks for å lage trekanter */
-        width: 0; 
-        height: 0; 
-        border-left: 10px solid transparent;
-        border-right: 10px solid transparent;
-        border-bottom: 25px solid #3a4a1f; /* Mørk pigg-farge */
-    }
+        /* Klasse for å aktivere ilden */
+        .active-fire {
+            width: 300px !important; /* Hvor lang flammen blir */
+            opacity: 0.9 !important;
+            transform: translate(20px, 0) scale(1.5) !important; /* Flytter flammen ut til høyre */
+        }
 
-    /* --- ØYNE (Røde) --- */
-    .eye {
-        position: absolute;
-        top: 35px;
-        width: 22px;
-        height: 22px;
-        background-color: #ff0000; /* RØDE ØYNE! */
-        border-radius: 50%;
-        box-shadow: 0 0 10px #ff0000; /* Rød glød */
-        z-index: 5;
-    }
-    .eye::after { /* Pupiller */
-        content: '';
-        position: absolute;
-        top: 7px; left: 7px; width: 8px; height: 8px;
-        background-color: yellow; /* Gule pupiller for kontrast */
-        border-radius: 50%;
-    }
-    .eye.left { left: 18px; }
-    .eye.right { right: 18px; }
+        /* 4. Skadetall som flyr */
+        .damage-text {
+            position: absolute; font-size: 4rem; font-weight: 900; color: #f1c40f;
+            text-shadow: 2px 2px 0 #000; pointer-events: none;
+            animation: floatUp 1s forwards; z-index: 20;
+        }
 
-    /* --- RØYK FRA ØYNENE --- */
-    .smoke-particle {
-        position: absolute;
-        background-color: rgba(200, 200, 200, 0.6);
-        border-radius: 50%;
-        pointer-events: none; /* Så man ikke kan klikke på røyken */
-        z-index: 4;
-    }
-    .smoke1 { width: 10px; height: 10px; top: 30px; left: 20px; animation: smokeRise 2s infinite 0.2s; }
-    .smoke2 { width: 12px; height: 12px; top: 30px; left: 25px; animation: smokeRise 2s infinite 0.5s; }
-    .smoke3 { width: 10px; height: 10px; top: 30px; right: 20px; animation: smokeRise 2s infinite 0.3s; }
-    .smoke4 { width: 12px; height: 12px; top: 30px; right: 25px; animation: smokeRise 2s infinite 0.7s; }
+        /* 5. Død */
+        .dead {
+            filter: grayscale(100%) brightness(0.3) blur(2px) !important;
+            animation: none !important;
+            transform: translateY(50px) rotate(10deg);
+            transition: 1s;
+        }
 
-    /* --- MUNN --- */
-    .mouth {
-        position: absolute; bottom: 25px; left: 25px;
-        width: 50px; height: 8px; background-color: #111;
-        border-radius: 5px; transition: height 0.2s ease;
-        border-bottom: 2px solid #444; /* Litt leppe-definisjon */
-    }
-    /* Tenner (valgfritt, fjern hvis det blir for mye) */
-    .mouth::after {
-        content: 'wwww';
-        color: white;
-        font-size: 12px;
-        position: absolute;
-        top: -2px;
-        left: 5px;
-        letter-spacing: 2px;
-        font-family: monospace;
-        opacity: 0.8;
-    }
+        /* --- ANIMASJONER KEYFRAMES --- */
+        @keyframes idleFloat {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+        @keyframes shake {
+            10%, 90% { transform: translate3d(-2px, 0, 0); }
+            20%, 80% { transform: translate3d(4px, 0, 0); }
+            30%, 50%, 70% { transform: translate3d(-8px, 0, 0); }
+            40%, 60% { transform: translate3d(8px, 0, 0); }
+        }
+        @keyframes floatUp {
+            to { transform: translateY(-150px); opacity: 0; }
+        }
 
-    /* --- ARM OG KLUBBE --- */
-    .arm-container {
-        position: absolute;
-        top: 60px;
-        right: -30px; /* Stikker ut på høyre side */
-        transform: rotate(-20deg); /* Vinklet litt oppover */
-        animation: armSway 3s infinite ease-in-out; /* Armen beveger seg litt med pusten */
-    }
-    .arm {
-        width: 60px; height: 25px;
-        background-color: #556b2f; /* Samme som kroppen */
-        border-radius: 20px;
-        border: 2px solid #3a4a1f;
-    }
-    .club {
-        position: absolute;
-        top: -60px;
-        right: -10px;
-        width: 20px;
-        height: 80px;
-        background: linear-gradient(to right, #8b4513, #a0522d); /* Treverk-farge */
-        border-radius: 5px 5px 15px 15px;
-        transform: rotate(20deg);
-    }
-    /* Klubbehodet (den tykke delen på toppen) */
-    .club::before {
-        content: '';
-        position: absolute;
-        top: -30px; left: -10px;
-        width: 40px; height: 40px;
-        background: linear-gradient(to right, #6b3e11, #8b4513);;
-        border-radius: 30% 30% 50% 50%;
-        box-shadow: inset 0 -5px 10px rgba(0,0,0,0.5);
-    }
-    /* Pigger på klubba */
-    .club::after {
-        content: ''; position: absolute; top: -20px; left: -15px;
-        width: 0; height: 0; border: 8px solid transparent; border-right-color: #ccc;
-        box-shadow: 40px 10px 0 #ccc, 10px -20px 0 #ccc; /* Flere pigger med skygger */
-    }
+        /* --- KNAPPER --- */
+        #controls {
+            position: fixed; bottom: 0; width: 100%;
+            background: rgba(0,0,0,0.8); border-top: 2px solid #444;
+            padding: 20px; display: flex; justify-content: center; gap: 15px; flex-wrap: wrap;
+        }
+        .atk-btn {
+            padding: 15px 30px; font-size: 1.8rem; font-weight: bold;
+            border: none; border-radius: 10px; color: white; cursor: pointer;
+            box-shadow: 0 5px rgba(0,0,0,0.5); position: relative; top: 0;
+        }
+        .atk-btn:active { top: 5px; box-shadow: none; }
 
+        /* Reset knapp */
+        #reset-btn { position: absolute; top: 15px; left: 15px; background: #333; color: #fff; border: 1px solid #555; padding: 5px 10px; cursor: pointer; border-radius: 5px; }
 
-    /* --- ILDEN (Måtte justeres for den nye størrelsen) --- */
-    #fire {
-        position: absolute;
-        bottom: 90px; /* Justert for ny skala */
-        left: 50%;
-        width: 0px; height: 100px; /* Større ild */
-        background: linear-gradient(to right, orange, red, darkred);
-        border-radius: 0 50px 50px 0;
-        opacity: 0;
-        transition: all 0.5s ease;
-        z-index: 1; /* Bak monsteret */
-        transform: scale(4) translateX(20px); /* Skalert opp */
-        transform-origin: left center;
-        filter: blur(2px); /* Gjør ilden litt mer "ildete" */
-    }
-
-    /* --- ANIMASJONER --- */
-
-    @keyframes breathing {
-        0%, 100% { transform: scale(4) translateY(0); }
-        50% { transform: scale(4.1) translateY(-5px); } /* Puster tyngre */
-    }
-
-    @keyframes smokeRise {
-        0% { opacity: 0.7; transform: translateY(0) scale(1); }
-        100% { opacity: 0; transform: translateY(-80px) scale(3); } /* Røyken stiger og forsvinner */
-    }
-
-    @keyframes armSway {
-        0%, 100% { transform: rotate(-20deg); }
-        50% { transform: rotate(-15deg); }
-    }
-
-    /* REAKSJONER */
-    #monster.roaring {
-        /* Når den brøler, blir skjellene rødlige */
-        background-color: #802222; 
-         background-image: 
-            radial-gradient(circle at 50% 50%, rgba(0,0,0,0.4) 20%, transparent 30%),
-            radial-gradient(circle at 50% 50%, rgba(0,0,0,0.2) 20%, transparent 30%);
-        /* Rister kraftigere siden den er større */
-        animation: shake 0.5s infinite; 
-    }
-    #monster.roaring .mouth { height: 50px; bottom: 15px; }
-
-    #monster.firing .mouth { height: 40px; }
-    #fire.active-fire { 
-        width: 250px; /* Lengre ildsprut */
-        opacity: 1; 
-    }
-
-    @keyframes shake {
-        0% { transform: scale(4) translate(2px, 2px) rotate(0deg); }
-        25% { transform: scale(4) translate(-2px, -4px) rotate(-2deg); }
-        50% { transform: scale(4) translate(-4px, 0px) rotate(2deg); }
-        75% { transform: scale(4) translate(4px, 4px) rotate(0deg); }
-        100% { transform: scale(4) translate(2px, -2px) rotate(-2deg); }
-    }
-
-    /* --- Knapper --- */
-    .controls {
-        margin-top: 20px;
-        z-index: 10;
-    }
-    .controls button {
-        padding: 15px 30px;
-        margin: 5px;
-        font-size: 18px;
-        cursor: pointer;
-        background-color: #444;
-        color: white;
-        border: 2px solid #666;
-        border-radius: 8px;
-        font-weight: bold;
-    }
-    .controls button:hover {
-        background-color: #666;
-        border-color: #888;
-    }
-
-</style>
+    </style>
 </head>
 <body>
 
-<h1>MONSTER BOSS</h1>
+    <div id="menu-screen" class="screen active">
+        <div class="config-card">
+            <h2 style="margin-top:0;">🔥 Boss Battle Oppsett</h2>
+            
+            <label>Navn på Monster:</label>
+            <input type="text" id="inp-name" value="Dragen Smaug">
 
-<div class="stage">
-    <div id="monster">
-        <div class="spikes-container">
-            <div class="spike"></div>
-            <div class="spike"></div>
-            <div class="spike"></div>
-            <div class="spike"></div>
-        </div>
+            <label>Bilde av Monster (URL):</label>
+            <input type="text" id="inp-img" value="https://cdn-icons-png.flaticon.com/512/3069/3069172.png">
+            <small style="color: #777; font-size: 0.8rem;">Tips: Hvis bildet ligger på PC-en din i samme mappe, skriv bare filnavnet (f.eks "monster.jpg")</small>
 
-        <div class="smoke-particle smoke1"></div>
-        <div class="smoke-particle smoke2"></div>
-        <div class="smoke-particle smoke3"></div>
-        <div class="smoke-particle smoke4"></div>
+            <label>Maks HP:</label>
+            <input type="number" id="inp-hp" value="500">
 
-        <div class="eye left"></div>
-        <div class="eye right"></div>
-        <div class="mouth"></div>
+            <label>Antall knapper:</label>
+            <input type="number" id="inp-count" value="3" min="1" max="6" onchange="createBtnInputs()">
 
-        <div class="arm-container">
-            <div class="arm"></div>
-            <div class="club"></div>
+            <div id="btn-config" style="margin-top: 15px;"></div>
+
+            <button class="start-btn" onclick="startGame()">Start Kampen</button>
         </div>
     </div>
-    
-    <div id="fire"></div>
-</div>
 
-<div class="controls">
-    <button onclick="triggerRoar()">BRØL!</button>
-    <button onclick="triggerFire()">SPRUT ILD!</button>
-</div>
+    <div id="game-screen" class="screen">
+        <button id="reset-btn" onclick="location.reload()">Tilbake til Meny</button>
 
+        <div id="game-area">
+            <h1 id="boss-name">Boss</h1>
+            
+            <div class="hp-frame">
+                <div class="hp-text" id="hp-text">100 / 100</div>
+                <div class="hp-fill" id="hp-fill"></div>
+            </div>
 
-<script>
-    // (Samme JavaScript som før)
-    const monster = document.getElementById('monster');
-    const fire = document.getElementById('fire');
+            <div class="stage">
+                <img id="monster-img" src="" alt="Monster">
+                <div id="fire-stream"></div>
+            </div>
+        </div>
 
-    function triggerRoar() {
-        monster.classList.remove('roaring'); 
-        void monster.offsetWidth; // Reset animasjon
-        monster.classList.add('roaring');
-        setTimeout(() => {
-            monster.classList.remove('roaring');
-        }, 1000);
-    }
+        <div id="controls">
+            </div>
+    </div>
 
-    function triggerFire() {
-        monster.classList.add('firing');
-        fire.classList.add('active-fire');
-        setTimeout(() => {
-            monster.classList.remove('firing');
-            fire.classList.remove('active-fire');
-        }, 1500);
-    }
-</script>
+    <script>
+        // Variabler
+        let currentHp = 0;
+        let maxHp = 0;
+        let isDead = false;
 
+        // Farger til knapper (standard)
+        const defaultCols = ['#27ae60', '#2980b9', '#8e44ad', '#f39c12', '#d35400', '#c0392b'];
+
+        // Kjør ved start for å lage menyen
+        window.onload = createBtnInputs;
+
+        function createBtnInputs() {
+            const count = document.getElementById('inp-count').value;
+            const container = document.getElementById('btn-config');
+            container.innerHTML = '';
+
+            for(let i=0; i<count; i++) {
+                const row = document.createElement('div');
+                row.className = 'btn-row';
+                
+                const valIn = document.createElement('input');
+                valIn.type = 'number'; valIn.value = (i+1)*50; valIn.id = `val-${i}`;
+                valIn.placeholder = "Skade";
+                
+                const colIn = document.createElement('input');
+                colIn.type = 'color'; colIn.value = defaultCols[i % defaultCols.length]; colIn.id = `col-${i}`;
+
+                row.appendChild(valIn);
+                row.appendChild(colIn);
+                container.appendChild(row);
+            }
+        }
+
+        function startGame() {
+            // Hent verdier fra menyen
+            const name = document.getElementById('inp-name').value;
+            const imgUrl = document.getElementById('inp-img').value;
+            maxHp = parseInt(document.getElementById('inp-hp').value);
+            currentHp = maxHp;
+            isDead = false;
+
+            // Oppdater Spill-skjermen
+            document.getElementById('boss-name').innerText = name;
+            document.getElementById('monster-img').src = imgUrl;
+            document.getElementById('monster-img').classList.remove('dead');
+            updateHpBar();
+
+            // Lag knapper
+            const ctrlDiv = document.getElementById('controls');
+            ctrlDiv.innerHTML = '';
+            const count = document.getElementById('inp-count').value;
+
+            for(let i=0; i<count; i++) {
+                const val = document.getElementById(`val-${i}`).value;
+                const col = document.getElementById(`col-${i}`).value;
+
+                const btn = document.createElement('button');
+                btn.className = 'atk-btn';
+                btn.innerText = `-${val}`;
+                btn.style.backgroundColor = col;
+                // Svart tekst på lyse farger
+                if(col === '#f39c12' || col === '#2ecc71') btn.style.color = '#000';
+                
+                // Koble knappen til skade-funksjonen
+                btn.onclick = () => takeDamage(parseInt(val));
+                ctrlDiv.appendChild(btn);
+            }
+
+            // Bytt skjerm
+            document.getElementById('menu-screen').classList.remove('active');
+            document.getElementById('game-screen').classList.add('active');
+        }
+
+        function takeDamage(amount) {
+            if(isDead) return;
+
+            // 1. Trekk fra HP
+            currentHp -= amount;
+            if(currentHp < 0) currentHp = 0;
+            updateHpBar();
+
+            // 2. Visuelle effekter
+            createDamageNumber(amount);
+            triggerHitEffect();
+
+            // 3. SJEKK OM DET ER MYE SKADE (>= 100) -> SPYT ILD
+            if(amount >= 100) {
+                triggerFireBreath();
+            }
+
+            // 4. Sjekk død
+            if(currentHp <= 0) {
+                isDead = true;
+                defeatMonster();
+            }
+        }
+
+        function updateHpBar() {
+            const pct = (currentHp / maxHp) * 100;
+            document.getElementById('hp-fill').style.width = pct + '%';
+            document.getElementById('hp-text').innerText = `${currentHp} / ${maxHp}`;
+        }
+
+        function triggerHitEffect() {
+            const img = document.getElementById('monster-img');
+            
+            // Nullstill animasjon
+            img.classList.remove('shake', 'flash-red');
+            void img.offsetWidth; // Magisk triks for å restarte animasjon
+            
+            // Legg til animasjoner
+            img.classList.add('shake');     // Rist
+            img.classList.add('flash-red'); // Blink rødt
+
+            // Fjern klassene etter 0.5 sekunder
+            setTimeout(() => {
+                img.classList.remove('shake', 'flash-red');
+            }, 500);
+        }
+
+        function triggerFireBreath() {
+            const fire = document.getElementById('fire-stream');
+            
+            // Aktiver ild-klassen
+            fire.classList.add('active-fire');
+
+            // Skjul ilden igjen etter 1 sekund
+            setTimeout(() => {
+                fire.classList.remove('active-fire');
+            }, 1000);
+        }
+
+        function createDamageNumber(amount) {
+            const txt = document.createElement('div');
+            txt.innerText = `-${amount}`;
+            txt.className = 'damage-text';
+            
+            // Tilfeldig plassering rundt midten
+            const rndX = Math.floor(Math.random() * 100) - 50;
+            txt.style.left = `calc(50% + ${rndX}px)`;
+            txt.style.top = '20%';
+
+            document.querySelector('.stage').appendChild(txt);
+            setTimeout(() => txt.remove(), 1000);
+        }
+
+        function defeatMonster() {
+            document.getElementById('monster-img').classList.add('dead');
+            document.getElementById('boss-name').innerText += " (BESEIRET!)";
+            document.getElementById('boss-name').style.color = "#555";
+        }
+
+    </script>
 </body>
 </html>
